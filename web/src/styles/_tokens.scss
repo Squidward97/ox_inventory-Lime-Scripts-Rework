@@ -29,18 +29,20 @@ $skew: -14deg;
 $hairline: rgb(255 255 255 / 0.06);
 $hairlineStrong: rgb(255 255 255 / 0.15);
 
-$slotW: r(106);
-$slotH: r(110);
+// Slot size and section gap are custom properties (defaults on html in index.scss) so a theme
+// can resize the grid; tactical does, together with its own row counts.
+$slotW: var(--slot-w);
+$slotH: var(--slot-h);
 $slot: $slotW;
 $gap: r(7);
 $gridCols: 5;
 $gridWidth: calc(#{$gridCols} * #{$slotW} + #{$gridCols - 1} * #{$gap});
 
 // Every section is a fixed head ($headH, including the gap to its grid) plus whole rows, and
-// sections are $sectionGap apart. With these values the gear slots, both backpacks and all
-// grids land on the same row lines across the three columns, and every column ends together.
+// sections are $sectionGap apart. With the default values the gear slots, both backpacks and
+// all grids land on the same row lines across the three columns, and every column ends together.
 $headH: r(76);
-$sectionGap: r(36);
+$sectionGap: var(--section-gap);
 
 @function rows($n) {
   @return calc(#{$n} * #{$slotH} + #{$n - 1} * #{$gap});

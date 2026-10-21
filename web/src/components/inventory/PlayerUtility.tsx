@@ -114,6 +114,7 @@ export const PlayerEquipment: React.FC = () => {
           ))}
         </div>
         <div className="player-utility-figure">
+          <div className="player-utility-reticle" />
           <BodySvg />
         </div>
         <div className="player-utility-column">

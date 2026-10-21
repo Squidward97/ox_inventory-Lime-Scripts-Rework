@@ -6,6 +6,16 @@ html {
   // UI_STYLE.md accent: active / primary / yours / success, and drop targets
   --accent: 200 240 44;
   --drop: 200 240 44;
+  // grid geometry (see _tokens.scss); tactical overrides these
+  --slot-w: #{r(106)};
+  --slot-h: #{r(110)};
+  --section-gap: #{r(36)};
+  // Tactical palette: graphite near-black with the faintest cool cast, so the lime is the only
+  // colour on screen. --ink is the page, --surface floats over it (tooltips, menus, checkout),
+  // and --light is the near-white that tiles, controls and hairlines are lifted with.
+  --ink: 9 10 12;
+  --surface: 14 15 18;
+  --light: 226 230 240;
 
   // glass slot tuning (inventory:uistyle "glass", see styles/glass.scss); white alpha values
   --glass-fill: 0.04;
@@ -195,7 +205,7 @@ input[type='number']::-webkit-outer-spin-button {
   font-weight: 700;
   line-height: 1;
   color: $zinc100;
-  background: rgb(255 255 255 / 0.12);
+  background: rgb(var(--light) / 0.14);
   @include cut(r(4));
 
   &[data-lit='true'] {
@@ -217,7 +227,7 @@ input[type='number']::-webkit-outer-spin-button {
   justify-content: center;
   padding: r(9) r(20);
   transform: skewX($skew);
-  background: rgb(255 255 255 / 0.06);
+  background: rgb(var(--light) / 0.08);
   border: none;
   color: $zinc400;
   font-size: r(12);
@@ -244,7 +254,7 @@ input[type='number']::-webkit-outer-spin-button {
 
   &:hover {
     color: $white;
-    background: rgb(255 255 255 / 0.1);
+    background: rgb(var(--light) / 0.14);
   }
 }
 
@@ -293,7 +303,7 @@ input[type='number']::-webkit-outer-spin-button {
   .segment {
     flex: 1;
     transform: skewX($skew);
-    background: rgb(255 255 255 / 0.08);
+    background: rgb(var(--light) / 0.1);
     transition: background-color 200ms ease-out;
   }
 
@@ -374,26 +384,22 @@ input[type='number']::-webkit-outer-spin-button {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  // Blue-black surface with depth: a faint cool light from above, getting deeper toward the
-  // bottom, then a soft vignette.
+  // Graphite page: near-opaque so the game only just shows through, a faint lift at the top,
+  // deepening toward the bottom, then a vignette.
   background:
-    radial-gradient(ellipse 65% 45% at 50% -8%, rgb(140 160 190 / 0.09), transparent 70%),
-    radial-gradient(ellipse 70% 60% at 50% 45%, rgb(255 255 255 / 0.025), transparent 70%),
-    linear-gradient(180deg, rgb(11 13 17 / 0.8) 0%, rgb(9 10 12 / 0.74) 40%, rgb(6 7 9 / 0.88) 100%);
-  box-shadow: inset 0 0 200px 50px rgb(6 7 9 / 0.7);
+    radial-gradient(ellipse 65% 45% at 50% -8%, rgb(var(--light) / 0.035), transparent 70%),
+    linear-gradient(180deg, rgb(var(--ink) / 0.9) 0%, rgb(var(--ink) / 0.87) 40%, rgb(6 7 8 / 0.95) 100%);
+  box-shadow: inset 0 0 200px 50px rgb(5 6 7 / 0.7);
 
-  // the guide's tactical texture: fine diagonal hatching, only around the edges
+  // the tactical texture: fine lime-tinted scanlines (UI_STYLE.md), dense enough to read as a
+  // surface rather than lines, softer behind the columns and full at the edges
   &::before {
     content: '';
     position: absolute;
     inset: 0;
-    background: repeating-linear-gradient(
-      135deg,
-      rgb(255 255 255 / 0.03) 0 1px,
-      transparent 1px r(9)
-    );
-    -webkit-mask-image: radial-gradient(ellipse 75% 70% at 50% 50%, transparent 45%, #000 100%);
-    mask-image: radial-gradient(ellipse 75% 70% at 50% 50%, transparent 45%, #000 100%);
+    background: repeating-linear-gradient(to bottom, rgb(var(--accent) / 0.035) 0 1px, transparent 1px 4px);
+    -webkit-mask-image: radial-gradient(ellipse 100% 95% at 50% 50%, rgb(0 0 0 / 0.35) 50%, #000 100%);
+    mask-image: radial-gradient(ellipse 100% 95% at 50% 50%, rgb(0 0 0 / 0.35) 50%, #000 100%);
   }
 }
 
@@ -417,7 +423,7 @@ input[type='number']::-webkit-outer-spin-button {
   height: r(34);
   padding: 0;
   transform: skewX($skew);
-  background: rgb(255 255 255 / 0.06);
+  background: rgb(var(--light) / 0.08);
   border: none;
   color: $zinc400;
   cursor: pointer;
@@ -434,7 +440,7 @@ input[type='number']::-webkit-outer-spin-button {
 
   &:hover {
     color: $white;
-    background: rgb(255 255 255 / 0.1);
+    background: rgb(var(--light) / 0.14);
   }
 
   &[data-active='true'] {
@@ -588,6 +594,87 @@ input[type='number']::-webkit-outer-spin-button {
       height: r(56);
       background: linear-gradient($accent, rgb(var(--accent) / 0));
     }
+  }
+}
+
+// tactical: the side columns turn slightly toward the centre, as if the screen wraps round the
+// player. Each pivots on its outer edge so nothing grows past the margins; the inner edge recedes
+// toward a vanishing point at the middle of the screen. --side-tilt sets the angle for both
+// columns and the toolbar; --tilt is each column's signed angle, shared with the open animation.
+:root[data-uistyle='tactical'] {
+  --side-tilt: 10deg;
+
+  .inventory-columns {
+    perspective: r(2400);
+    perspective-origin: 50% 50%;
+  }
+
+  .inventory-column-left {
+    --tilt: var(--side-tilt);
+    transform-origin: left center;
+    transform: rotateY(var(--tilt));
+  }
+
+  .inventory-column-right {
+    --tilt: calc(var(--side-tilt) * -1);
+    transform-origin: right center;
+    transform: rotateY(var(--tilt));
+  }
+
+  // The toolbar lines up with the left column and turns with it. It sits outside
+  // .inventory-columns, so its transform rebuilds that perspective: move the origin to the
+  // columns' vanishing point (the centre of .inventory-columns, below), apply the same depth, move
+  // back, then turn on the shared left edge. --toolbar-3d is reused by the open animation.
+  .toolbar {
+    left: r(110);
+    --toolbar-3d: translate(calc(50vw - #{r(111)}), calc(50vh - #{r(27.5)})) perspective(#{r(2400)})
+      translate(calc(#{r(111)} - 50vw), calc(#{r(27.5)} - 50vh)) rotateY(var(--side-tilt));
+    transform-origin: 0 0;
+    transform: var(--toolbar-3d);
+  }
+}
+
+// Tactical: smaller slots, more rows. With 95-high rows and a 21 section gap every column still
+// ends together and the rows share lines across columns: left is gear 3 + backpack 4, centre is
+// pockets 5 + quick access 1, right is 8 rows (or stash 3 + backpack 4, mirroring the left).
+// The components pass the default row counts inline, so the counts are restated here.
+:root[data-uistyle='tactical'] {
+  --slot-w: #{r(92)};
+  --slot-h: #{r(95)};
+  --section-gap: #{r(21)};
+
+  // head + 8 rows is 3px shorter than the default columns; the narrower columns also move in
+  // from the screen edges so they sit closer round the middle one
+  .inventory-columns {
+    left: r(110);
+    right: r(112);
+    bottom: r(71);
+  }
+
+  .inventory-grid-wrapper[data-inventorytype='player'] .inventory-grid-container {
+    height: rows(5);
+  }
+
+  .inventory-grid-wrapper[data-inventorytype='backpack'] .inventory-grid-container,
+  .empty-state {
+    height: rows(4);
+  }
+
+  .inventory-column-right > .inventory-grid-wrapper[data-sizing='grow'] .inventory-grid-container {
+    max-height: rows(8);
+  }
+
+  .inventory-column-right > .inventory-grid-wrapper:first-child:not(:last-child) .inventory-grid-container {
+    max-height: rows(3);
+  }
+
+  .inventory-column-right > .inventory-grid-wrapper[data-inventorytype='rightbackpack'] .inventory-grid-container {
+    max-height: rows(4);
+  }
+
+  .crafting-wrapper .card-list,
+  .shop-body {
+    height: rows(8);
   }
 }
 
@@ -996,26 +1083,120 @@ body.inv-dragging {
 
   .drop-action {
     color: $zinc200;
-    background: rgb(255 255 255 / 0.12);
+    background: rgb(var(--light) / 0.16);
   }
 }
 
-// tactical: solid guide tiles with clipped corners
+// tactical: graphite tiles lifted just above the page like cards on it, with lightly rounded
+// corners. The edges are inset shadows, a faint rim and a brighter top edge, and a faint
+// top-down sheen keeps them in the same light.
+$slotSheen: linear-gradient(180deg, rgb(var(--light) / 0.03), rgb(var(--light) / 0));
+// --glow-lift scales a tier's own glow on hover
+$slotGlow: calc(var(--rarity-glow) * var(--glow-lift, 1));
+$slotRarityGlow: linear-gradient(
+  0deg,
+  rgb(var(--rarity-rgb) / #{$slotGlow}),
+  rgb(var(--rarity-rgb) / calc(#{$slotGlow} * 0.35))
+);
+$slotEdges: inset 0 1px 0 var(--edge-top), inset 0 0 0 1px var(--edge);
+
 :root[data-uistyle='tactical'] .inventory-slot {
-  background-color: rgb(9 10 12 / 0.6);
-  border-color: $hairline;
-  border-radius: 0;
-  @include cut(r(8));
+  --edge: rgb(var(--light) / 0.055);
+  --edge-top: rgb(var(--light) / 0.09);
+  border: none;
+  border-radius: r(2.5);
+  background-color: rgb(var(--light) / 0.025);
+  background-image: $slotSheen;
+  box-shadow: $slotEdges;
+  transition:
+    box-shadow 120ms ease-out,
+    background-color 120ms ease-out,
+    opacity 150ms ease-out;
 
   &[data-filled='true'] {
-    background-color: rgb(9 10 12 / 0.78);
-    border-color: rgb(255 255 255 / 0.08);
+    --edge: rgb(var(--light) / 0.075);
+    --edge-top: rgb(var(--light) / 0.13);
+    background-color: rgb(var(--light) / 0.045);
   }
 
   &[data-filled='true']:hover {
-    background-color: rgb(24 27 33 / 0.92);
-    border-color: rgb(255 255 255 / 0.2);
+    --edge: rgb(var(--light) / 0.16);
+    --edge-top: rgb(var(--light) / 0.26);
+    background-color: rgb(var(--light) / 0.085);
   }
+
+  &[data-over='true'] {
+    --edge: rgb(var(--drop) / 0.7);
+    --edge-top: #{$drop};
+  }
+}
+
+// the shared rarity glow, rebuilt on top of the edges
+:root[data-uistyle='tactical'] .inventory-slot[data-filled='true'][data-rarity]:not([data-rarity='common']) {
+  background-image: $slotRarityGlow;
+  box-shadow:
+    $slotEdges,
+    inset 0 0 r(20) rgb(var(--rarity-rgb) / calc(#{$slotGlow} * 1.2));
+}
+
+// rarity: a small solid corner tag at the top-right instead of the bottom-left stripe
+:root[data-uistyle='tactical'] .inventory-slot[data-filled='true']::after {
+  top: 0;
+  right: 0;
+  bottom: auto;
+  left: auto;
+  width: r(10);
+  height: r(10);
+  background: linear-gradient(to top right, transparent 50%, var(--rarity) 50%);
+}
+
+// the footer no longer has to clear a corner stripe
+:root[data-uistyle='tactical'] .item-slot-footer {
+  padding-left: r(8);
+}
+
+// a little more air round the item than the shared r(12) r(14) r(20)
+:root[data-uistyle='tactical'] .item-slot-image {
+  inset: r(15) r(17) r(22);
+}
+
+// items cast a soft shadow down onto the tile, as if lifted off it (drop-shadow follows the
+// image's own outline)
+:root[data-uistyle='tactical'] .inventory-slot[data-filled='true'] .item-slot-image {
+  filter: drop-shadow(0 r(3) r(4) rgb(0 0 0 / 0.4));
+}
+
+// Rarity ladder: every tier adds one thing to the one below. Uncommon: the corner stripe and glow,
+// brighter on hover. Rare: a sheen on open and hover (motion.scss). Epic: the top edge takes the
+// rarity colour and the sheen repeats. Legendary: a stronger edge, a lit stripe, a faster
+// sheen.
+:root[data-uistyle='tactical'] .inventory-slot[data-filled='true'] {
+  &[data-rarity]:not([data-rarity='common']):hover {
+    --glow-lift: 1.7;
+  }
+
+  // blue and purple read darker than green and orange at the same strength, so they glow harder
+  &[data-rarity='rare'] {
+    --rarity-glow: 0.19;
+  }
+
+  &[data-rarity='epic'] {
+    --rarity-glow: 0.21;
+    --edge-top: rgb(var(--rarity-rgb) / 0.4);
+  }
+
+  &[data-rarity='legendary'] {
+    --edge-top: rgb(var(--rarity-rgb) / 0.65);
+  }
+
+  &[data-rarity='legendary']::after {
+    filter: drop-shadow(0 0 r(3) var(--rarity));
+  }
+}
+
+// the hotbar fades up from the same graphite as the open inventory
+:root[data-uistyle='tactical'] .hotbar-container {
+  background: linear-gradient(0deg, rgb(var(--ink) / 0.85), rgb(var(--ink) / 0.5) 50%, rgb(var(--ink) / 0));
 }
 
 // ---------------------------------------------------------------- equipment
@@ -1082,6 +1263,94 @@ body.inv-dragging {
   flex: 1;
 }
 
+// tactical: the body stands in a holographic scanner bed. ::before is the scan field (lime
+// scanlines faded to an oval, plus the band that sweeps down once on open, see motion.scss);
+// ::after is a soft light pool behind the torso and a pad under the feet.
+:root[data-uistyle='tactical'] .player-utility-figure {
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  &::before {
+    // sizes kept out of the shorthand: Sass would read its `/` as division
+    background-image:
+      linear-gradient(transparent, rgb(var(--accent) / 0.16) 85%, rgb(var(--accent) / 0.4) 100%),
+      repeating-linear-gradient(to bottom, rgb(var(--accent) / 0.08) 0 1px, transparent 1px 3px);
+    background-position:
+      0 r(-60),
+      0 0;
+    background-size:
+      100% r(60),
+      auto;
+    background-repeat: no-repeat, repeat;
+    -webkit-mask-image: radial-gradient(ellipse 40% 48% at 50% 47%, #000 35%, transparent 75%);
+    mask-image: radial-gradient(ellipse 40% 48% at 50% 47%, #000 35%, transparent 75%);
+  }
+
+  &::after {
+    background:
+      radial-gradient(ellipse 22% 3.5% at 50% 96%, rgb(var(--accent) / 0.14), transparent 70%),
+      radial-gradient(ellipse 30% 5% at 50% 96%, transparent 72%, rgb(var(--accent) / 0.3) 76%, transparent 81%),
+      radial-gradient(ellipse 42% 46% at 50% 42%, rgb(var(--light) / 0.07), transparent 70%);
+  }
+
+  .body-svg-wrapper {
+    z-index: 1;
+  }
+
+  // A scope reticle fills the space round the body: ::before is a dial of ticks with longer lime
+  // marks every 45°, ::after a thin rim and an inner range ring. The container fades its middle
+  // out so the reticle clears the body.
+  .player-utility-reticle {
+    display: block;
+    -webkit-mask-image: linear-gradient(90deg, #000 10%, transparent 33%, transparent 67%, #000 90%);
+    mask-image: linear-gradient(90deg, #000 10%, transparent 33%, transparent 67%, #000 90%);
+  }
+
+  .player-utility-reticle::before,
+  .player-utility-reticle::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: r(300);
+    height: r(300);
+    margin: r(-150) 0 0 r(-150);
+    border-radius: 50%;
+  }
+
+  .player-utility-reticle::before {
+    background:
+      repeating-conic-gradient(rgb(var(--accent) / 0.2) 0 0.8deg, transparent 0.8deg 45deg),
+      repeating-conic-gradient(rgb(var(--light) / 0.1) 0 0.5deg, transparent 0.5deg 7.5deg);
+    -webkit-mask-image: radial-gradient(circle closest-side, transparent 89%, #000 89.5% 96%, transparent 96.5%);
+    mask-image: radial-gradient(circle closest-side, transparent 89%, #000 89.5% 96%, transparent 96.5%);
+  }
+
+  .player-utility-reticle::after {
+    border: 1px solid rgb(var(--light) / 0.06);
+    background: radial-gradient(
+      circle closest-side,
+      transparent calc(70% - 1px),
+      rgb(var(--light) / 0.045) 70%,
+      transparent calc(70% + 1px)
+    );
+  }
+}
+
+// the tactical scope reticle behind the body (drawn in the tactical figure block above); other
+// themes don't show one
+.player-utility-reticle {
+  display: none;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
 .player-utility-quick {
   display: flex;
   flex-direction: column;
@@ -1132,8 +1401,8 @@ body.inv-dragging {
   flex-direction: column;
   gap: r(4);
   padding: r(7) r(12) r(7) r(14);
-  background: rgb(14 16 19 / 0.95);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
+  background: rgb(var(--surface) / 0.96);
+  box-shadow: inset 0 0 0 1px rgb(var(--light) / 0.12);
 
   .body-svg-tooltip-part {
     font-size: r(14);
@@ -1171,7 +1440,7 @@ body.inv-dragging {
   .drop-action {
     flex: 1;
     padding: r(12) r(20);
-    background: rgb(255 255 255 / 0.08);
+    background: rgb(var(--light) / 0.1);
     color: $zinc300;
     cursor: default;
 
@@ -1202,15 +1471,18 @@ body.inv-dragging {
   gap: r(14);
   flex-shrink: 0;
   padding: r(10) r(12) r(10) r(10);
-  background: rgb(9 10 12 / 0.6);
-  border: 1px solid $hairline;
+  // lit from the top like the tactical slots
+  background: linear-gradient(180deg, rgb(var(--light) / 0.05), rgb(var(--light) / 0.025));
+  border: 1px solid rgb(var(--light) / 0.06);
+  border-top-color: rgb(var(--light) / 0.1);
   transition:
     border-color 120ms ease-out,
     background-color 120ms ease-out;
 
   &:hover {
-    background: rgb(9 10 12 / 0.75);
-    border-color: rgb(255 255 255 / 0.14);
+    background: linear-gradient(180deg, rgb(var(--light) / 0.08), rgb(var(--light) / 0.045));
+    border-color: rgb(var(--light) / 0.13);
+    border-top-color: rgb(var(--light) / 0.22);
   }
 }
 
@@ -1346,7 +1618,7 @@ body.inv-dragging {
     width: r(22);
     height: r(22);
     padding: 0;
-    background: rgb(255 255 255 / 0.06);
+    background: rgb(var(--light) / 0.08);
     border: none;
     color: $zinc300;
     cursor: pointer;
@@ -1358,7 +1630,7 @@ body.inv-dragging {
     }
 
     &:hover:not(:disabled) {
-      background: rgb(255 255 255 / 0.12);
+      background: rgb(var(--light) / 0.16);
       color: $white;
     }
 
@@ -1483,7 +1755,7 @@ body.inv-dragging {
   flex-direction: column;
   gap: r(10);
   padding: r(12) r(14) r(12) r(17);
-  background: rgb(14 16 19 / 0.92);
+  background: rgb(var(--surface) / 0.94);
   box-shadow: inset 3px 0 0 $accent;
 }
 
@@ -1647,6 +1919,90 @@ body.inv-dragging {
   }
 }
 
+// Tactical checkout: the same lit surface as the cards. Lime is kept for Pay alone, so the chosen
+// payment method is a light fill with a thin lime underline, and the balance sits beside Pay.
+:root[data-uistyle='tactical'] {
+  .shop-checkout {
+    gap: r(12);
+    padding: r(14) r(16) r(16);
+    border-radius: r(2.5);
+    background:
+      linear-gradient(180deg, rgb(var(--light) / 0.05), rgb(var(--light) / 0.02)),
+      rgb(var(--surface) / 0.9);
+    box-shadow:
+      inset 0 1px 0 rgb(var(--light) / 0.12),
+      inset 0 0 0 1px rgb(var(--light) / 0.07);
+  }
+
+  .shop-checkout-head {
+    padding-bottom: r(10);
+    border-bottom: 1px solid rgb(var(--light) / 0.07);
+  }
+
+  .shop-cart-count {
+    margin-left: r(2);
+    font-family: $mono;
+    font-size: r(12);
+    letter-spacing: 0.06em;
+    color: $white;
+  }
+
+  .shop-cart-empty {
+    padding: r(11) r(12);
+    border: 1px dashed rgb(var(--light) / 0.12);
+    border-radius: r(2.5);
+    text-align: center;
+    color: $zinc500;
+  }
+
+  .shop-checkout-foot {
+    gap: r(14);
+  }
+
+  .shop-methods {
+    flex: 1;
+    gap: r(4);
+
+    .tab {
+      padding: r(8) r(16);
+      background: transparent;
+      color: $zinc500;
+      box-shadow: inset 0 0 0 1px rgb(var(--light) / 0.08);
+
+      &:hover:not(:disabled) {
+        color: $white;
+        background: rgb(var(--light) / 0.06);
+      }
+
+      &[data-active='true'] {
+        color: $white;
+        background: rgb(var(--light) / 0.12);
+        box-shadow: inset 0 -2px 0 $accent;
+      }
+    }
+  }
+
+  // pushed to the right edge of the methods row, right before Pay
+  .shop-balance {
+    align-items: flex-end;
+    margin-left: auto;
+    text-align: right;
+
+    .shop-price {
+      font-size: r(14);
+    }
+  }
+
+  .shop-pay {
+    padding: r(11) r(24);
+
+    &:disabled {
+      background: rgb(var(--light) / 0.04);
+      color: $zinc600;
+    }
+  }
+}
+
 // ---------------------------------------------------------------- tooltip
 
 .tooltip-wrapper {
@@ -1658,14 +2014,14 @@ body.inv-dragging {
   box-sizing: border-box;
   width: r(256);
   padding: r(12) r(14) r(12) r(17);
-  background: rgb(14 16 19 / 0.95);
+  background: rgb(var(--surface) / 0.96);
   box-shadow: inset 3px 0 0 var(--rarity, #{$accent});
   color: $zinc200;
 
   &:not([data-rarity='common']) {
     background:
       radial-gradient(ellipse 80% 55% at 0% 0%, rgb(var(--rarity-rgb) / 0.16), transparent 70%),
-      rgb(14 16 19 / 0.95);
+      rgb(var(--surface) / 0.96);
   }
 
   .tooltip-name .slash {
@@ -1858,7 +2214,7 @@ body.inv-dragging {
   display: flex;
   flex-direction: column;
   padding: r(6) 0;
-  background: rgb(14 16 19 / 0.96);
+  background: rgb(var(--surface) / 0.97);
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.07);
   outline: none;
   @include cut(r(8));

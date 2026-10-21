@@ -84,6 +84,30 @@ $gridCols: 5;
   }
 }
 
+// tactical side columns rise with their tilt held, so they don't snap to it at the end
+@keyframes motion-rise-tilt {
+  from {
+    opacity: 0;
+    transform: rotateY(var(--tilt)) translateY(r(14));
+  }
+}
+
+:root[data-uistyle='tactical'] :is(.inventory-column-left, .inventory-column-right) {
+  animation-name: motion-rise-tilt;
+}
+
+// ...and so does the tactical toolbar, which turns with the left column
+@keyframes motion-drop-tilt {
+  from {
+    opacity: 0;
+    transform: var(--toolbar-3d) translateY(r(-8));
+  }
+}
+
+:root[data-uistyle='tactical'] .toolbar {
+  animation-name: motion-drop-tilt;
+}
+
 .key-hints {
   animation: motion-fade 400ms ease-out 260ms backwards;
 }
@@ -121,6 +145,24 @@ $gridCols: 5;
 
 .player-utility-figure {
   animation: motion-fade 500ms ease-out 200ms backwards;
+}
+
+// tactical: one scan pass down the body as the inventory opens; only the band layer moves
+@keyframes figure-scan {
+  from {
+    background-position:
+      0 r(-60),
+      0 0;
+  }
+  to {
+    background-position:
+      0 calc(100% + #{r(60)}),
+      0 0;
+  }
+}
+
+:root[data-uistyle='tactical'] .player-utility-figure::before {
+  animation: figure-scan 1300ms cubic-bezier(0.45, 0, 0.25, 1) 350ms both;
 }
 
 // shop and crafting cards follow one after another
@@ -226,6 +268,91 @@ body.inv-dragging .item-slot-image {
   transform: scale(1.07);
 }
 
+// ------------------------------------------------------------ rarity
+
+// tooltip pips light up one after another
+@keyframes rarity-pip {
+  from {
+    background: rgb(255 255 255 / 0.1);
+  }
+}
+
+.tooltip-rarity-pips span[data-on='true'] {
+  animation: rarity-pip 220ms ease-out backwards;
+}
+
+@for $i from 1 through 5 {
+  .tooltip-rarity-pips span:nth-child(#{$i}) {
+    animation-delay: 80ms + $i * 70ms;
+  }
+}
+
+// tactical: a light band in the rarity colour sweeps across rare-and-up slots (see the rarity
+// ladder in index.scss). Rare sweeps once as the slot appears and again on hover; epic and
+// legendary repeat on a slow cycle, staggered so neighbours never sweep together.
+@keyframes rarity-sheen {
+  from {
+    transform: translateX(-120%);
+  }
+  to {
+    transform: translateX(120%);
+  }
+}
+
+@keyframes rarity-sheen-loop {
+  0% {
+    transform: translateX(-120%);
+  }
+  22%,
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+:root[data-uistyle='tactical']
+  .inventory-slot[data-filled='true']:is([data-rarity='rare'], [data-rarity='epic'], [data-rarity='legendary']) {
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    background: linear-gradient(
+      110deg,
+      transparent 35%,
+      rgb(var(--rarity-rgb) / 0.22) 45%,
+      rgb(255 255 255 / 0.22) 50%,
+      rgb(var(--rarity-rgb) / 0.22) 55%,
+      transparent 65%
+    );
+    transform: translateX(-120%);
+    will-change: transform;
+    animation: rarity-sheen 900ms $easeOut 420ms backwards;
+  }
+
+  // the band only travels on the way in; it snaps back unseen on the way out
+  &:hover::before {
+    transform: translateX(120%);
+    transition: transform 700ms $easeOut;
+  }
+
+  &[data-rarity='epic']::before {
+    animation: rarity-sheen-loop 7s ease-in-out 600ms infinite backwards;
+  }
+
+  &[data-rarity='legendary']::before {
+    animation: rarity-sheen-loop 4.5s ease-in-out 600ms infinite backwards;
+  }
+
+  &:is([data-rarity='epic'], [data-rarity='legendary']):nth-child(3n + 2)::before {
+    animation-delay: 1.4s;
+  }
+
+  &:is([data-rarity='epic'], [data-rarity='legendary']):nth-child(3n)::before {
+    animation-delay: 2.2s;
+  }
+}
+
 // ------------------------------------------------------------ reduced motion
 
 @media (prefers-reduced-motion: reduce) {
@@ -237,13 +364,20 @@ body.inv-dragging .item-slot-image {
   .item-slot-image,
   .player-utility-slot,
   .player-utility-figure,
+  .player-utility-figure::before,
   .card-list > *,
   .shop-checkout,
   .shop-cart-line,
   .shop-in-cart,
   .section-bar,
-  .item-slot-durability {
+  .item-slot-durability,
+  .tooltip-rarity-pips span,
+  .inventory-slot::before {
     animation: none !important;
+  }
+
+  .inventory-slot::before {
+    transition: none !important;
   }
 
   .item-slot-image,

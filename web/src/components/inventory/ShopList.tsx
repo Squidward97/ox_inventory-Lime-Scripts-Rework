@@ -207,7 +207,7 @@ const Checkout: React.FC<{
         <span className="field-label">
           {Locale.ui_cart || 'Cart'}
           <span className="dim"> · </span>
-          {padCount(lines.reduce((total, item) => total + cart[item.slot], 0))}
+          <span className="shop-cart-count">{padCount(lines.reduce((total, item) => total + cart[item.slot], 0))}</span>
         </span>
         {lines.length > 0 && (
           <button className="shop-clear" onClick={() => setCart({})}>
@@ -265,14 +265,15 @@ const Checkout: React.FC<{
           >
             <span>{Locale.ui_card || 'Card'}</span>
           </button>
-          <span className="shop-balance">
-            <span className="field-label">
-              {payMethod === 'card' ? Locale.ui_bank || 'Bank' : Locale.ui_wallet || 'Wallet'}
+          {/* only when the amount is known, so the label never dangles on its own */}
+          {(payMethod === 'card' ? balance?.bank : wallet) !== undefined && (
+            <span className="shop-balance">
+              <span className="field-label">
+                {payMethod === 'card' ? Locale.ui_bank || 'Bank' : Locale.ui_wallet || 'Wallet'}
+              </span>
+              <Price amount={(payMethod === 'card' ? balance?.bank : wallet)!} />
             </span>
-            {payMethod === 'card'
-              ? balance?.bank !== undefined && <Price amount={balance.bank} />
-              : wallet !== undefined && <Price amount={wallet} />}
-          </span>
+          )}
         </div>
 
         <button
