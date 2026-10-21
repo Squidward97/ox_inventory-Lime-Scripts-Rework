@@ -122,3 +122,34 @@ end
 function server.getOwnedVehicleId(entityId)
     return NDCore.getVehicle(entityId)?.id
 end
+
+---Bank balance for card payments in shops.
+---@param inv OxInventory
+---@return number?
+---@diagnostic disable-next-line: duplicate-set-field
+function server.getBankBalance(inv)
+    local player = NDCore.getPlayer(inv.id)
+
+    return player and player.bank
+end
+
+---@param inv OxInventory
+---@param amount number
+---@param reason string
+---@return boolean
+---@diagnostic disable-next-line: duplicate-set-field
+function server.removeBankMoney(inv, amount, reason)
+    local player = NDCore.getPlayer(inv.id)
+
+    return player and player.deductMoney('bank', amount, reason) or false
+end
+
+---@param inv OxInventory
+---@param amount number
+---@param reason string
+---@diagnostic disable-next-line: duplicate-set-field
+function server.addBankMoney(inv, amount, reason)
+    local player = NDCore.getPlayer(inv.id)
+
+    if player then player.addMoney('bank', amount, reason) end
+end

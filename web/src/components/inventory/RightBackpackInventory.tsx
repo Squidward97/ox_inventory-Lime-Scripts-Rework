@@ -12,9 +12,9 @@ const RightBackpackInventory: React.FC = () => {
   return (
     <InventoryGrid
       inventory={rightBackpackInventory}
+      eyebrow={Locale.ui_backpack || 'Backpack'}
       title={rightBackpackInventory.label || Locale.ui_backpack || 'Backpack'}
       maxRows={3}
-      hint={Locale.ui_hint_take || 'Drag items to your pockets · Ctrl + click to take'}
     />
   );
 };

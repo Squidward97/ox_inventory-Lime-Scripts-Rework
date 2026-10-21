@@ -1,0 +1,214 @@
+@use 'tokens' as *;
+@use 'upright' as *;
+
+// inventory:uistyle "minimal": flat and quiet on the shared upright structure (see
+// _upright.scss). Solid charcoal surfaces, small radii, no gradients, glows, shadows or
+// borders; rarity is one thin line. Cheapest theme to render.
+
+$tile: rgb(34 36 40 / 0.92);
+$tileFilled: rgb(41 43 48 / 0.95);
+$tileHover: rgb(52 55 61 / 0.97);
+$surface: rgb(32 34 38 / 0.98);
+$control: rgb(255 255 255 / 0.06);
+$controlHover: rgb(255 255 255 / 0.1);
+
+:root[data-uistyle='minimal'] {
+  @include upright($radius: r(6), $radiusCard: r(6), $radiusControl: r(5));
+
+  // a flat dark overlay; no light pools, vignette or texture
+  .inventory-backdrop {
+    background: rgb(10 11 13 / 0.9);
+    box-shadow: none;
+  }
+
+  // ------------------------------------------------------------ primitives
+
+  .eyebrow::before {
+    display: none;
+  }
+
+  .keycap {
+    background: rgb(255 255 255 / 0.08);
+  }
+
+  .tab {
+    background: $control;
+    box-shadow: none;
+
+    &:hover {
+      background: $controlHover;
+    }
+  }
+
+  .tab-active,
+  .tab-active:hover {
+    background: $accent;
+    color: $base;
+  }
+
+  .field {
+    background: $control;
+    box-shadow: none;
+
+    &:focus {
+      background: $controlHover;
+    }
+  }
+
+  .section-rule::after {
+    background: rgb(255 255 255 / 0.05);
+  }
+
+  // ------------------------------------------------------------ toolbar
+
+  .toolbar-search {
+    background: $control;
+
+    &:focus-within {
+      background: $controlHover;
+    }
+  }
+
+  .toolbar-button {
+    background: $control;
+
+    &:hover {
+      background: $controlHover;
+    }
+
+    &[data-active='true'] {
+      background: rgb(var(--accent) / 0.12);
+    }
+  }
+
+  // ------------------------------------------------------------ slots
+
+  .inventory-slot {
+    background-color: $tile;
+    border-color: transparent;
+    border-radius: r(6);
+
+    &[data-filled='true'] {
+      background-color: $tileFilled;
+      border-color: transparent;
+    }
+
+    &[data-filled='true']:hover {
+      background-color: $tileHover;
+      border-color: transparent;
+    }
+
+    &[data-over='true'] {
+      background-color: rgb(var(--drop) / 0.1);
+      border-color: $drop;
+    }
+  }
+
+  // no rarity glow; the line below carries it
+  .inventory-slot[data-filled='true'][data-rarity]:not([data-rarity='common']) {
+    background-image: none;
+    box-shadow: none;
+  }
+
+  // rarity: one thin line along the bottom edge, nothing for common items
+  .inventory-slot[data-filled='true']::after {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    height: 2px;
+    background: var(--rarity);
+  }
+
+  .inventory-slot[data-filled='true'][data-rarity='common']::after {
+    display: none;
+  }
+
+  // the footer no longer has to clear a corner mark
+  .item-slot-footer {
+    padding-left: r(8);
+  }
+
+  .body-svg-tooltip {
+    background: $surface;
+    box-shadow: none;
+  }
+
+  // ------------------------------------------------------------ actions
+
+  .inventory-control .drop-action {
+    background: $control;
+
+    &[data-over='true'] {
+      background: $drop;
+      color: $base;
+    }
+  }
+
+  body.inv-dragging .drop-action {
+    background: $controlHover;
+  }
+
+  // ------------------------------------------------------------ cards (crafting, shop)
+
+  .item-card {
+    border: none;
+    background: $tile;
+
+    &:hover {
+      background: $tileFilled;
+    }
+  }
+
+  .card-stepper {
+    background: $control;
+  }
+
+  .card-action {
+    .item-card[data-craftable='true'] &,
+    .item-card[data-available='true'] & {
+      background: $accent;
+      color: $base;
+    }
+  }
+
+  .shop-checkout {
+    background: $tileFilled;
+    box-shadow: none;
+  }
+
+  .shop-pay[data-ready='true'] {
+    background: $accent;
+    color: $base;
+  }
+
+  // ------------------------------------------------------------ tooltip and menus
+
+  // solid, with the same thin rarity line as the slots along the top edge
+  .tooltip-wrapper {
+    background: $surface;
+    box-shadow: none;
+
+    &:not([data-rarity='common']) {
+      background: $surface;
+      box-shadow: inset 0 2px 0 var(--rarity);
+    }
+  }
+
+  .tooltip-status {
+    background: none;
+  }
+
+  .context-menu-list {
+    background: $surface;
+    box-shadow: none;
+  }
+
+  .context-menu-item {
+    &:hover,
+    &:focus,
+    &[data-open] {
+      background: $control;
+    }
+  }
+}

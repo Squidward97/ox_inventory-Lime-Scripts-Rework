@@ -306,3 +306,8 @@ export const isFilteredOut = (
 
   return false;
 };
+
+export const RARITY_TIERS = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
+
+// 1-5; custom rarity names fall back to the first tier
+export const getRarityTier = (rarity: string) => Math.max(1, RARITY_TIERS.indexOf(rarity) + 1);

@@ -182,6 +182,50 @@ Item images used by the UI: `web/images/<item>.png`.
 `ui_alt_lmb_bag`, `ui_rmb_bag`, and the `armour_*` plate strings (see
 `locales/en.json`).
 
+### UI style
+
+The interface comes in two themes on the same layout:
+
+```cfg
+# "tactical" (default): UI_STYLE.md look: Chakra Petch, italic headings, skewed controls,
+#                       tiles with clipped corners and a rarity stripe along the cut
+# "glass": Inter, upright headings, rounded controls and cards,
+#          translucent rounded tiles with a glowing rarity dot
+# "minimal": flat and quiet: solid charcoal tiles, no glows, gradients or borders,
+#            rarity as one thin line; the cheapest theme to render
+setr inventory:uistyle "tactical"
+```
+
+Glass and minimal share their structure (`web/src/styles/_upright.scss`) and add their
+own surfaces in `glass.scss` and `minimal.scss`. Glass slots are tuned with CSS
+variables at the top of `web/src/index.scss` (`--glass-fill`, `--glass-fill-filled`,
+`--glass-fill-hover`, `--glass-border`, `--glass-border-filled`, `--glass-radius`).
+Both themes share `--rarity-glow` and the accent colour `--accent` / `--drop` (RGB
+triplets). Rebuild the UI (`bun run build` in `web/`) after changing them. In the
+browser dev server, `?uistyle=glass` or `?uistyle=minimal` previews the other themes.
+
+Items can set `category` (`food`, `weapons`, `clothing`, `tools`) for the toolbar
+filters and `rarity` (`uncommon`, `rare`, `epic`, `legendary`) for the slot tint.
+
+### Shop cart and card payments
+
+Shops list their stock as cards with an *Add* button; the cart docked under them is paid in
+one go (`ox_inventory:buyCart`, which validates stock, licences, grades, weight, space and
+hooks for every line before charging anything). Dragging an item into your pockets still
+buys it instantly with cash.
+
+```cfg
+# Let players pay $-priced items from their bank account (default true)
+setr inventory:cardpayment true
+# Require an item to pay by card, e.g. "mastercard" (default "": no item needed)
+setr inventory:carditem ""
+```
+
+Card payment needs `server.getBankBalance`, `server.removeBankMoney` and
+`server.addBankMoney` (refunds) from the framework bridge; ESX, QBX and ND provide them.
+Black money and item currencies are always paid from the inventory. Each line still fires
+the `buyItem` hook (with `paymentMethod` = `cash` / `card`), so existing hooks can reject it.
+
 ---
 
 ## How it works

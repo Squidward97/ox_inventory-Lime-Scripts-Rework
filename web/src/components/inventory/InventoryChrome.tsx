@@ -1,11 +1,12 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React from 'react';
 import { useAppDispatch, useAppSelector } from '../../store';
+import { selectRightInventory } from '../../store/inventory';
+import { InventoryType } from '../../typings';
 import { Locale } from '../../store/locale';
 import { ItemCategory, setCategory, setSearch } from '../../store/filters';
 import {
   FoodIcon,
   GridIcon,
-  InfoIcon,
   PistolOutlineIcon,
   MouseGlyph,
   SearchIcon,
@@ -25,9 +26,25 @@ const CATEGORIES: Array<{ id: ItemCategory; icon: React.ReactNode; label: () => 
 
 const Plus = () => <span className="key-hint-plus">+</span>;
 
-const KeyHints: React.FC = () => {
+// What to do with the inventory on the right, shown as the footer's left label.
+const contextHint = (type: string) => {
+  switch (type) {
+    case '':
+      return '';
+    case InventoryType.SHOP:
+      return Locale.ui_hint_shop || 'Buy from a card, or drag an item into your pockets';
+    case InventoryType.CRAFTING:
+      return Locale.ui_hint_crafting || 'Craft from a card, or drag a recipe into your pockets';
+    default:
+      return Locale.ui_hint_take || 'Drag items to your pockets · Ctrl + click to take';
+  }
+};
+
+// Footer per the style guide: a faint context label on the left, every input on the right.
+export const InventoryKeyHints: React.FC = () => {
+  const rightInventory = useAppSelector(selectRightInventory);
   const hints: Array<{ keys: React.ReactNode; label: string }> = [
-    { keys: <MouseGlyph button="right" />, label: Locale.ui_rmb || 'Open item options' },
+    { keys: <MouseGlyph button="right" />, label: Locale.ui_hint_options || 'Options' },
     {
       keys: (
         <>
@@ -36,7 +53,7 @@ const KeyHints: React.FC = () => {
           <MouseGlyph button="left" />
         </>
       ),
-      label: Locale.ui_alt_lmb || 'Use an item',
+      label: Locale.ui_hint_use || 'Use',
     },
     {
       keys: (
@@ -46,7 +63,7 @@ const KeyHints: React.FC = () => {
           <MouseGlyph button="left" />
         </>
       ),
-      label: Locale.ui_ctrl_lmb || 'Move a stack to the other inventory',
+      label: Locale.ui_hint_quick_move || 'Quick move',
     },
     {
       keys: (
@@ -58,7 +75,7 @@ const KeyHints: React.FC = () => {
           <MouseGlyph button="left" />
         </>
       ),
-      label: Locale.ui_ctrl_shift_lmb || 'Move half a stack',
+      label: Locale.ui_hint_move_half || 'Move half',
     },
     {
       keys: (
@@ -68,58 +85,34 @@ const KeyHints: React.FC = () => {
           <span className="keycap">{Locale.ui_hint_drag || 'Drag'}</span>
         </>
       ),
-      label: Locale.ui_shift_drag || 'Split a stack in half',
+      label: Locale.ui_hint_split || 'Split',
     },
     { keys: <span className="keycap">Esc</span>, label: Locale.ui_close || 'Close' },
   ];
 
   return (
-    <ul className="key-hints-list divided">
-      {hints.map((hint, index) => (
-        <li className="key-hint" key={index}>
-          <span className="key-hint-keys">{hint.keys}</span>
-          <span className="key-hint-label">{hint.label}</span>
-        </li>
-      ))}
-    </ul>
+    <div className="key-hints">
+      <span className="key-hints-context">{contextHint(rightInventory.type)}</span>
+      <div className="key-hints-list">
+        {hints.map((hint, index) => (
+          <React.Fragment key={index}>
+            {index > 0 && <span className="key-hints-divider" />}
+            <div className="key-hint">
+              <span className="key-hint-keys">{hint.keys}</span>
+              <span className="key-hint-label">{hint.label}</span>
+            </div>
+          </React.Fragment>
+        ))}
+      </div>
+    </div>
   );
 };
 
 export const InventoryToolbar: React.FC = () => {
   const dispatch = useAppDispatch();
   const { search, category } = useAppSelector((state) => state.filters);
-  const [infoOpen, setInfoOpen] = useState(false);
-  const infoRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!infoOpen) return;
-
-    const close = (event: MouseEvent) => {
-      if (!infoRef.current?.contains(event.target as Node)) setInfoOpen(false);
-    };
-
-    window.addEventListener('mousedown', close);
-    return () => window.removeEventListener('mousedown', close);
-  }, [infoOpen]);
-
   return (
     <div className="toolbar">
-      <div className="toolbar-info" ref={infoRef}>
-        <button
-          className="toolbar-button"
-          data-active={infoOpen}
-          title={Locale.ui_usefulcontrols || 'Controls'}
-          onClick={() => setInfoOpen((open) => !open)}
-        >
-          <InfoIcon />
-        </button>
-        {infoOpen && (
-          <div className="toolbar-popover cut-sm">
-            <div className="eyebrow">{Locale.ui_usefulcontrols || 'Controls'}</div>
-            <KeyHints />
-          </div>
-        )}
-      </div>
       <label className="toolbar-search">
         <SearchIcon className="icon" />
         <input

@@ -45,10 +45,13 @@ const InventoryHotbar: React.FC = () => {
               key={`hotbar-${item.slot}`}
               data-filled={isSlotWithItem(item)}
               data-rarity={isSlotWithItem(item) ? getItemRarity(item) : undefined}
-              style={{
-                backgroundImage: `url(${item?.name ? getItemUrl(item as SlotWithItem) : 'none'}`,
-              }}
             >
+              {item?.name && (
+                <div
+                  className="item-slot-image"
+                  style={{ backgroundImage: `url(${getItemUrl(item as SlotWithItem) || 'none'})` }}
+                />
+              )}
               <span className="slot-badge">{hotkeyForSlot(item.slot)}</span>
               {isSlotWithItem(item) && (
                 <div className="item-slot-wrapper">
@@ -57,14 +60,19 @@ const InventoryHotbar: React.FC = () => {
                     {item.durability !== undefined ? (
                       <SegmentedBar
                         percent={item.durability}
-                        segments={10}
+                        segments={6}
                         tone={durabilityTone(item.durability)}
                         className="item-slot-durability"
                       />
                     ) : (
                       <span />
                     )}
-                    {item.count > 0 && <span className="item-slot-count">x{item.count.toLocaleString('en-us')}</span>}
+                    {item.count > 0 && (
+              <span className="item-slot-count">
+                <span className="item-slot-count-x">×</span>
+                {item.count.toLocaleString('en-us')}
+              </span>
+            )}
                   </div>
                 </div>
               )}

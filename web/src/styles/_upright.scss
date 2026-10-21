@@ -1,0 +1,495 @@
+@use 'tokens' as *;
+
+// Shared structure of the non-tactical themes (glass, minimal): Inter, upright normal-case
+// headings, no skews or clipped corners, smooth bars, rounded controls. Themes include this
+// inside their :root[data-uistyle='…'] block and then add their own surfaces and colours.
+
+$sans: 'Inter', 'Segoe UI', system-ui, sans-serif;
+
+@mixin upright($radius: r(10), $radiusCard: r(12), $radiusControl: r(8)) {
+  body {
+    font-family: $sans;
+    font-feature-settings: 'cv11', 'ss01';
+    letter-spacing: -0.005em;
+  }
+
+  button,
+  input,
+  .field {
+    font-family: $sans;
+  }
+
+  // elements round their own corners instead of clipping them
+  .cut,
+  .cut-sm,
+  .cut-xs {
+    clip-path: none;
+  }
+
+  // no tactical hatching
+  .inventory-backdrop::before {
+    display: none;
+  }
+
+  // ------------------------------------------------------------ primitives
+
+  .eyebrow {
+    gap: r(8);
+    font-size: r(10.5);
+    letter-spacing: 0.16em;
+    color: $zinc400;
+
+    &::before {
+      width: r(6);
+      height: r(6);
+      border-radius: 50%;
+    }
+  }
+
+  .drawer-title,
+  .section-heading .section-heading-title {
+    font-style: normal;
+    text-transform: none;
+    font-weight: 600;
+  }
+
+  .field-label {
+    font-size: r(10.5);
+    font-weight: 500;
+    letter-spacing: 0.12em;
+  }
+
+  .hint {
+    font-size: r(11.5);
+  }
+
+  .slash {
+    width: r(8);
+    height: r(8);
+    transform: none;
+    border-radius: 50%;
+  }
+
+  .keycap {
+    min-width: r(22);
+    height: r(20);
+    padding: 0 r(6);
+    border-radius: r(5);
+    font-size: r(10);
+    font-weight: 600;
+  }
+
+  .keycap-sm {
+    min-width: r(18);
+    height: r(18);
+  }
+
+  .tab {
+    padding: r(9) r(18);
+    transform: none;
+    border-radius: $radiusControl;
+    font-size: r(12.5);
+    font-weight: 600;
+    font-style: normal;
+    text-transform: none;
+    letter-spacing: 0.01em;
+    color: $zinc300;
+
+    > * {
+      transform: none;
+    }
+  }
+
+  .field {
+    padding: r(8) r(12);
+    border: none;
+    border-radius: $radiusControl;
+    font-size: r(14);
+    transition:
+      box-shadow 150ms ease-out,
+      background-color 150ms ease-out;
+  }
+
+  // one smooth rounded track instead of skewed segments
+  .segmented-bar {
+    gap: 0;
+    border-radius: 99px;
+    overflow: hidden;
+    background: rgb(255 255 255 / 0.08);
+
+    .segment {
+      transform: none;
+      background: transparent;
+    }
+
+    .segment-filled {
+      background: $zinc300;
+    }
+
+    &[data-tone='warning'] .segment-filled {
+      background: $amber300;
+    }
+
+    &[data-tone='danger'] .segment-filled {
+      background: $red500;
+    }
+  }
+
+  // ------------------------------------------------------------ toolbar and footer
+
+  .toolbar-search {
+    width: r(260);
+    margin-right: r(6);
+    padding: 0 r(12);
+    border: none;
+    border-radius: $radius;
+    transition:
+      box-shadow 150ms ease-out,
+      background-color 150ms ease-out;
+
+    input {
+      font-size: r(13);
+    }
+
+    &:focus-within {
+      color: $zinc200;
+    }
+  }
+
+  .toolbar-button {
+    width: r(34);
+    height: r(34);
+    transform: none;
+    border-radius: $radius;
+
+    svg {
+      width: r(17);
+      height: r(17);
+      transform: none;
+    }
+
+    &[data-active='true'] {
+      color: $accent;
+    }
+  }
+
+  .key-hints {
+    .key-hints-context {
+      font-size: r(11.5);
+    }
+
+    .key-hints-divider {
+      transform: none;
+      height: r(12);
+    }
+  }
+
+  .key-hint {
+    gap: r(7);
+
+    .key-hint-label {
+      font-size: r(11.5);
+      font-weight: 500;
+      text-transform: none;
+      letter-spacing: 0;
+      color: $zinc400;
+    }
+  }
+
+  // ------------------------------------------------------------ columns
+
+  // columns sit straight on the backdrop: no panels and no divider lines
+  .inventory-column + .inventory-column {
+    border-left-color: transparent;
+
+    &::before {
+      display: none;
+    }
+  }
+
+  .section-head {
+    gap: r(10);
+  }
+
+  .section-header {
+    .section-title {
+      font-size: r(21);
+      font-weight: 600;
+      font-style: normal;
+      text-transform: none;
+      letter-spacing: -0.015em;
+    }
+
+    .section-title-sub {
+      letter-spacing: 0;
+    }
+
+    .section-tag {
+      letter-spacing: 0.12em;
+    }
+
+    .section-weight {
+      font-size: r(13);
+      font-weight: 500;
+
+      .unit {
+        font-weight: 500;
+        letter-spacing: 0.08em;
+      }
+    }
+  }
+
+  .section-rule::after {
+    background: rgb(255 255 255 / 0.07);
+  }
+
+  .section-bar {
+    height: r(4);
+  }
+
+  .empty-state {
+    border-radius: $radiusCard;
+    border-color: rgb(255 255 255 / 0.1);
+
+    .empty-state-title {
+      text-transform: none;
+      letter-spacing: 0;
+      font-weight: 600;
+    }
+  }
+
+  // ------------------------------------------------------------ slots
+
+  .slot-badge {
+    top: r(7);
+    left: r(9);
+    font-size: r(12);
+    font-weight: 600;
+    font-style: normal;
+  }
+
+  .item-slot-footer {
+    padding: 0 r(8) r(6) r(20);
+  }
+
+  .item-slot-count,
+  .item-slot-price {
+    font-size: r(11.5);
+    font-weight: 600;
+  }
+
+  .item-slot-durability {
+    height: r(3);
+  }
+
+  .item-slot-label {
+    font-size: r(11);
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .player-utility-placeholder span {
+    font-size: r(12);
+    font-weight: 500;
+    font-style: normal;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .body-svg-tooltip {
+    border-radius: $radius;
+
+    .body-svg-tooltip-part {
+      font-size: r(13);
+      font-weight: 600;
+      font-style: normal;
+      text-transform: none;
+    }
+
+    p {
+      letter-spacing: 0.1em;
+    }
+  }
+
+  // ------------------------------------------------------------ cards (crafting, shop)
+
+  .item-card {
+    padding: r(10) r(12) r(10) r(10);
+    border-radius: $radiusCard;
+  }
+
+  .item-card-name {
+    font-size: r(15);
+    font-weight: 600;
+    font-style: normal;
+    text-transform: none;
+    letter-spacing: -0.01em;
+  }
+
+  .recipe-ingredient .recipe-ingredient-count {
+    font-weight: 600;
+  }
+
+  .card-stepper {
+    gap: r(2);
+    padding: r(2);
+    border-radius: $radiusControl;
+
+    button {
+      width: r(22);
+      height: r(22);
+      border-radius: r(6);
+      background: transparent;
+
+      &:hover:not(:disabled) {
+        background: rgb(255 255 255 / 0.1);
+      }
+    }
+
+    .card-stepper-value {
+      font-size: r(12.5);
+      font-weight: 600;
+    }
+  }
+
+  .card-action {
+    padding: r(7) r(18);
+  }
+
+  .shop-price {
+    font-size: r(15);
+    font-weight: 600;
+    font-style: normal;
+    letter-spacing: -0.01em;
+
+    .shop-price-unit {
+      letter-spacing: 0.08em;
+    }
+  }
+
+  .shop-checkout {
+    gap: r(12);
+    padding: r(14) r(16);
+    border-radius: $radiusCard;
+  }
+
+  .shop-clear {
+    font-size: r(11);
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .shop-cart-line {
+    padding: r(6) 0;
+
+    .shop-cart-name {
+      font-size: r(12.5);
+    }
+
+    .shop-price {
+      font-size: r(13);
+    }
+  }
+
+  // payment method as a two-way segmented control; the primary colour stays on Pay
+  .shop-methods {
+    gap: r(2);
+
+    .tab {
+      padding: r(7) r(14);
+      font-size: r(12);
+      background: transparent;
+      box-shadow: none;
+
+      &[data-active='true'] {
+        color: $white;
+        background: rgb(255 255 255 / 0.12);
+      }
+    }
+  }
+
+  .shop-balance {
+    margin-left: r(12);
+  }
+
+  .shop-pay {
+    padding: r(9) r(18);
+
+    .shop-price {
+      font-size: r(13);
+    }
+  }
+
+  // ------------------------------------------------------------ tooltip and menus
+
+  .tooltip-wrapper {
+    gap: r(10);
+    padding: r(14) r(16);
+    border-radius: $radiusCard;
+    overflow: hidden;
+  }
+
+  .tooltip-rarity {
+    .tooltip-rarity-label {
+      letter-spacing: 0.14em;
+      font-weight: 600;
+    }
+
+    .tooltip-rarity-pips span {
+      width: r(12);
+      transform: none;
+      border-radius: 99px;
+    }
+  }
+
+  .tooltip-eyebrow-row {
+    letter-spacing: 0.12em;
+  }
+
+  .tooltip-name {
+    gap: r(8);
+    font-size: r(16);
+    font-weight: 600;
+    font-style: normal;
+    text-transform: none;
+    letter-spacing: -0.01em;
+  }
+
+  .tooltip-status {
+    margin: r(2) r(-16) r(-14);
+    padding: r(12) r(16) r(14);
+    border-top-color: rgb(255 255 255 / 0.07);
+    background: rgb(255 255 255 / 0.03);
+  }
+
+  .context-menu-list {
+    min-width: r(200);
+    padding: r(5);
+    border-radius: $radiusCard;
+  }
+
+  .context-menu-item {
+    padding: r(8) r(11);
+    border-radius: r(7);
+    font-size: r(12.5);
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0;
+
+    &:hover,
+    &:focus,
+    &[data-open] {
+      background: rgb(255 255 255 / 0.08);
+      box-shadow: none;
+    }
+  }
+
+  .item-notification .item-notification-action {
+    font-size: r(11);
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+}

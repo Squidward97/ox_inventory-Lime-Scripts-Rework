@@ -1,0 +1,58 @@
+@use 'sass:math';
+
+// "Tactical street" tokens, see UI_STYLE.md
+@function r($px) {
+  @return math.div($px, 16) * 1rem;
+}
+
+$accent: rgb(var(--accent));
+$drop: rgb(var(--drop));
+$base: #0e1013;
+$deep: #090a0c;
+$white: #ffffff;
+$zinc100: #f4f4f5;
+$zinc200: #e4e4e7;
+$zinc300: #d4d4d8;
+$zinc400: #a1a1aa;
+$zinc500: #71717a;
+$zinc600: #52525b;
+$zinc700: #3f3f46;
+$red400: #f87171;
+$red500: #ef4444;
+$amber300: #fcd34d;
+
+$display: 'Chakra Petch', sans-serif;
+// numbers use the display face with fixed-width digits
+$mono: $display;
+
+$skew: -14deg;
+$hairline: rgb(255 255 255 / 0.06);
+$hairlineStrong: rgb(255 255 255 / 0.15);
+
+$slotW: r(106);
+$slotH: r(110);
+$slot: $slotW;
+$gap: r(7);
+$gridCols: 5;
+$gridWidth: calc(#{$gridCols} * #{$slotW} + #{$gridCols - 1} * #{$gap});
+
+// Every section is a fixed head ($headH, including the gap to its grid) plus whole rows, and
+// sections are $sectionGap apart. With these values the gear slots, both backpacks and all
+// grids land on the same row lines across the three columns, and every column ends together.
+$headH: r(76);
+$sectionGap: r(36);
+
+@function rows($n) {
+  @return calc(#{$n} * #{$slotH} + #{$n - 1} * #{$gap});
+}
+
+@mixin cut($size) {
+  clip-path: polygon(
+    0 0,
+    calc(100% - #{$size}) 0,
+    100% $size,
+    100% 100%,
+    $size 100%,
+    0 calc(100% - #{$size})
+  );
+}

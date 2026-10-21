@@ -41,14 +41,14 @@ debugData([
         slots: 61,
         label: 'Bob Smith',
         weight: 3000,
-        maxWeight: 5000,
+        maxWeight: 50000,
         items: [
           {
             slot: 51,
             name: 'backpack',
             weight: 2500,
             count: 1,
-            metadata: { id: 'BPK123456DEMO' },
+            metadata: { id: 'BPK123456DEMO', rarity: 'legendary' },
           },
           { slot: 55, name: 'armour', weight: 3000, count: 1, metadata: { durability: 64, rarity: 'epic' } },
           { slot: 57, name: 'WEAPON_PISTOL', weight: 1100, count: 1, metadata: { durability: 91, ammo: 12, rarity: 'rare' } },
@@ -73,7 +73,7 @@ debugData([
             name: 'water',
             weight: 100,
             count: 1,
-            metadata: { description: 'Generic item description' },
+            metadata: { description: 'Generic item description', rarity: 'uncommon' },
           },
           { slot: 5, name: 'water', weight: 100, count: 1 },
           {
@@ -90,25 +90,31 @@ debugData([
       },
       rightInventory: {
         id: 'shop',
-        type: 'crafting',
-        slots: 5000,
-        label: 'Bob Smith',
-        weight: 3000,
-        maxWeight: 5000,
+        type: 'shop',
+        slots: 8,
+        label: '24/7 Supermarket',
         items: [
+          { slot: 1, name: 'water', weight: 500, price: 15, count: 50 },
+          { slot: 2, name: 'burger', weight: 220, price: 35, count: 24 },
+          { slot: 3, name: 'sprunk', weight: 350, price: 12 },
           {
-            slot: 1,
-            name: 'lockpick',
-            weight: 500,
-            price: 300,
-            ingredients: {
-              iron: 5,
-              copper: 12,
-              powersaw: 0.1,
-            },
-            metadata: {
-              description: 'Simple lockpick that breaks easily and can pick basic door locks',
-            },
+            slot: 4,
+            name: 'bandage',
+            weight: 120,
+            price: 120,
+            count: 8,
+            metadata: { description: 'Field dressing for light wounds' },
+          },
+          { slot: 5, name: 'lockpick', weight: 160, price: 400, currency: 'black_money', count: 3 },
+          { slot: 6, name: 'radio', weight: 900, price: 3, currency: 'water', count: 5 },
+          { slot: 7, name: 'phone', weight: 190, price: 850, count: 0 },
+          {
+            slot: 8,
+            name: 'armour',
+            weight: 3000,
+            price: 2500,
+            count: 2,
+            metadata: { rarity: 'epic', description: 'Light ballistic vest' },
           },
         ],
       },
@@ -136,8 +142,10 @@ const App: React.FC = () => {
     items: typeof Items;
     leftInventory: Inventory;
     imagepath: string;
-  }>('init', ({ locale, items, leftInventory, imagepath }) => {
+    uistyle?: string;
+  }>('init', ({ locale, items, leftInventory, imagepath, uistyle }) => {
     for (const name in locale) Locale[name] = locale[name];
+    if (uistyle) document.documentElement.dataset.uistyle = uistyle;
     for (const name in items) Items[name] = items[name];
 
     setImagePath(imagepath);

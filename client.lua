@@ -1418,7 +1418,8 @@ RegisterNetEvent('ox_inventory:setPlayerInventory', function(currentDrops, inven
 				items = PlayerData.inventory,
 				maxWeight = shared.playerweight,
 			},
-			imagepath = client.imagepath
+			imagepath = client.imagepath,
+			uistyle = client.uistyle
 		}
 	})
 
@@ -2006,6 +2007,31 @@ RegisterNUICallback('buyItem', function(data, cb)
 	end
 
 	cb(response)
+end)
+
+RegisterNUICallback('getShopBalance', function(_, cb)
+	cb(lib.callback.await('ox_inventory:getShopBalance', false) or false)
+end)
+
+RegisterNUICallback('buyCart', function(data, cb)
+	local response, shopSlots, message = lib.callback.await('ox_inventory:buyCart', 100, data)
+
+	-- purchased items reach the player through the usual slot updates; only shop stock needs a push
+	if shopSlots and #shopSlots > 0 then
+		local items = {}
+
+		for i = 1, #shopSlots do
+			items[i] = { item = shopSlots[i], inventory = 'shop' }
+		end
+
+		SendNUIMessage({ action = 'refreshSlots', data = { items = items } })
+	end
+
+	if message then
+		lib.notify(message)
+	end
+
+	cb(response or false)
 end)
 
 RegisterNUICallback('craftItem', function(data, cb)

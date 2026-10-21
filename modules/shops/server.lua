@@ -310,4 +310,242 @@ lib.callback.register('ox_inventory:buyItem', function(source, data)
 	end
 end)
 
+---@param playerInv OxInventory
+---@return OxShop?, string?, number?
+local function getCurrentShop(playerInv)
+	local shopType, shopId = playerInv.currentShop:match('^(.-) (%d-)$')
+
+	if not shopType then shopType = playerInv.currentShop end
+	if shopId then shopId = tonumber(shopId) end
+
+	local shops = Shops[shopType]
+
+	return shopId and shops and shops[shopId] or shops, shopType, shopId
+end
+
+---@param inv OxInventory
+local function canPayByCard(inv)
+	if not server.cardpayment or not server.getBankBalance or not server.removeBankMoney then return false end
+
+	return server.carditem == '' or Inventory.GetItemCount(inv, server.carditem) > 0
+end
+
+local function formatPrice(currency, amount)
+	return currency == 'money' and ('%s%s'):format(locale('$'), math.groupdigits(amount))
+		or ('%s %s'):format(math.groupdigits(amount), Items(currency)?.label or currency)
+end
+
+---Wallet and bank figures for the shop's checkout panel.
+lib.callback.register('ox_inventory:getShopBalance', function(source)
+	local playerInv = Inventory(source)
+
+	if not playerInv or not playerInv.currentShop then return end
+
+	local card = canPayByCard(playerInv)
+
+	return {
+		card = card,
+		bank = card and server.getBankBalance(playerInv) or nil,
+	}
+end)
+
+---Buys every line of a cart in one go. Nothing is charged unless the whole cart can be paid
+---for and carried; a line that still fails to land (or is rejected by a hook) is refunded.
+---@param data { items: { slot: number, count: number }[], method: 'cash' | 'card' }
+lib.callback.register('ox_inventory:buyCart', function(source, data)
+	local playerInv = Inventory(source)
+
+	if not playerInv or not playerInv.currentShop or type(data) ~= 'table' or type(data.items) ~= 'table' then return false end
+
+	local shop, shopType, shopId = getCurrentShop(playerInv)
+
+	if not shop then return false end
+
+	local byCard = data.method == 'card'
+
+	if byCard and not canPayByCard(playerInv) then
+		return false, false, { type = 'error', description = locale('card_unavailable') }
+	end
+
+	-- merge repeated slots and drop anything malformed
+	local wanted = {}
+
+	for i = 1, math.min(#data.items, 50) do
+		local entry = data.items[i]
+		local slot = type(entry) == 'table' and tonumber(entry.slot)
+		local count = type(entry) == 'table' and math.floor(tonumber(entry.count) or 0) or 0
+
+		if slot and count > 0 then wanted[slot] = (wanted[slot] or 0) + count end
+	end
+
+	local lines, cashTotals, bankTotal, addedWeight = {}, {}, 0, 0
+
+	for slot, requested in pairs(wanted) do
+		local fromData = shop.items[slot]
+
+		if not fromData then return false end
+
+		if fromData.count and fromData.count < requested then
+			return false, false, { type = 'error', description = locale('shop_nostock') }
+		end
+
+		if fromData.license and server.hasLicense and not server.hasLicense(playerInv, fromData.license) then
+			return false, false, { type = 'error', description = locale('item_unlicensed') }
+		end
+
+		if fromData.grade then
+			local _, rank = server.hasGroup(playerInv, shop.groups)
+
+			if not isRequiredGrade(fromData.grade, rank) then
+				return false, false, { type = 'error', description = locale('stash_lowgrade') }
+			end
+		end
+
+		local fromItem = Items(fromData.name)
+
+		if not fromItem then return false end
+		if fromItem.cb and fromItem.cb('buying', fromItem, playerInv, slot, shop) == false then return false end
+
+		local metadata, count = Items.Metadata(playerInv, fromItem, fromData.metadata and table.clone(fromData.metadata) or {}, requested)
+		local currency = fromData.currency or 'money'
+		local price = count * fromData.price
+		local bank = byCard and currency == 'money'
+
+		if bank then
+			bankTotal += price
+		else
+			cashTotals[currency] = (cashTotals[currency] or 0) + price
+		end
+
+		addedWeight += (fromItem.weight + (metadata?.weight or 0)) * count
+
+		lines[#lines + 1] = {
+			slot = slot,
+			fromData = fromData,
+			item = fromItem,
+			metadata = metadata,
+			count = count,
+			price = price,
+			currency = currency,
+			bank = bank,
+		}
+	end
+
+	if #lines == 0 then return false end
+
+	if playerInv.weight + addedWeight > playerInv.maxWeight then
+		return false, false, { type = 'error', description = locale('cannot_carry') }
+	end
+
+	for i = 1, #lines do
+		local line = lines[i]
+
+		if not Inventory.CanCarryItem(playerInv, line.item, line.count, line.metadata) then
+			return false, false, { type = 'error', description = locale('cannot_carry') }
+		end
+	end
+
+	for currency, total in pairs(cashTotals) do
+		local canAfford = canAffordItem(playerInv, currency, total)
+
+		if canAfford ~= true then return false, false, canAfford end
+	end
+
+	if bankTotal > 0 and (server.getBankBalance(playerInv) or 0) < bankTotal then
+		return false, false, { type = 'error', description = locale('card_declined', formatPrice('money', bankTotal)) }
+	end
+
+	-- every line passes its buyItem hooks before anything changes hands
+	local hooks = {}
+
+	local function closeHooks()
+		for i = 1, #hooks do
+			getmetatable(hooks[i]).__close(hooks[i])
+		end
+	end
+
+	for i = 1, #lines do
+		local line = lines[i]
+
+		hooks[i] = TriggerEventHooks('buyItem', {
+			source = source,
+			shopType = shopType,
+			shopId = shopId,
+			toInventory = playerInv.id,
+			fromSlot = line.fromData,
+			itemName = line.fromData.name,
+			metadata = line.metadata,
+			count = line.count,
+			price = line.fromData.price,
+			totalPrice = line.price,
+			currency = line.currency,
+			paymentMethod = line.bank and 'card' or 'cash',
+		})
+
+		if not hooks[i].success then
+			closeHooks()
+			return false
+		end
+	end
+
+	local reason = ('%s purchase'):format(shop.label or shopType)
+
+	if bankTotal > 0 and not server.removeBankMoney(playerInv, bankTotal, reason) then
+		for i = 1, #hooks do hooks[i].success = false end
+		closeHooks()
+		return false, false, { type = 'error', description = locale('card_declined', formatPrice('money', bankTotal)) }
+	end
+
+	for currency, total in pairs(cashTotals) do
+		removeCurrency(playerInv, currency, total)
+	end
+
+	local updatedSlots, bought, spent = {}, 0, {}
+
+	for i = 1, #lines do
+		local line = lines[i]
+		local success = Inventory.AddItem(playerInv, line.item, line.count, line.metadata)
+
+		if success then
+			if line.fromData.count then
+				line.fromData.count -= line.count
+				updatedSlots[#updatedSlots + 1] = line.fromData
+			end
+
+			bought += line.count
+			spent[line.currency] = (spent[line.currency] or 0) + line.price
+		else
+			hooks[i].success = false
+
+			if line.bank then
+				if server.addBankMoney then server.addBankMoney(playerInv, line.price, ('%s refund'):format(reason)) end
+			else
+				Inventory.AddItem(playerInv, line.currency, line.price)
+			end
+		end
+	end
+
+	closeHooks()
+
+	if server.syncInventory then server.syncInventory(playerInv) end
+
+	if bought == 0 then
+		return false, false, { type = 'error', description = locale('cannot_carry') }
+	end
+
+	local paid = {}
+
+	for currency, amount in pairs(spent) do
+		paid[#paid + 1] = formatPrice(currency, amount)
+	end
+
+	local message = locale(byCard and bankTotal > 0 and 'purchased_cart_card' or 'purchased_cart', bought, table.concat(paid, ', '))
+
+	if server.loglevel > 0 then
+		lib.logger(playerInv.owner, 'buyCart', ('"%s" %s'):format(playerInv.label, message:lower()), ('shop:%s'):format(shop.label))
+	end
+
+	return true, updatedSlots, { type = 'success', description = message }
+end)
+
 server.shops = Shops

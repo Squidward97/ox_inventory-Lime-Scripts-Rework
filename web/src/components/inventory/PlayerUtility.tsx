@@ -5,6 +5,7 @@ import { isSlotWithItem } from '../../helpers';
 import { Locale } from '../../store/locale';
 import { InventoryType, UtilitySlotConfig } from '../../typings';
 import InventorySlot from './InventorySlot';
+import SectionHead, { SectionCount } from './SectionHead';
 import BodySvg from '../utils/BodySvg';
 import { BackpackIcon, ParachuteIcon, PhoneIcon, PistolIcon, VestIcon } from '../utils/icons/UtilityIcons';
 import { IdIcon, WalletIcon } from '../utils/icons/TablerIcons';
@@ -86,22 +87,26 @@ const useUtilityReady = () => {
   const leftInventory = useAppSelector(selectLeftInventory);
   const utility = useAppSelector(selectUtilityConfig);
 
-  return { utility, ready: utility.length > 0 && leftInventory.type === InventoryType.PLAYER && leftInventory.items.length > 0 };
+  return { leftInventory, utility, ready: utility.length > 0 && leftInventory.type === InventoryType.PLAYER && leftInventory.items.length > 0 };
 };
 
 export const PlayerEquipment: React.FC = () => {
-  const { utility, ready } = useUtilityReady();
+  const { leftInventory, utility, ready } = useUtilityReady();
 
   if (!ready) return null;
 
   const gearSlots = utility.filter((config) => config.role !== 'hotkey');
   const half = Math.ceil(gearSlots.length / 2);
+  const equipped = gearSlots.filter((config) => isSlotWithItem(leftInventory.items[config.slot - 1] || { slot: 0 })).length;
 
   return (
     <div className="player-utility-wrapper">
-      <div className="section-header">
-        <h2 className="section-title">{Locale.ui_equipment || 'Equipment'}</h2>
-      </div>
+      <SectionHead
+        eyebrow={Locale.ui_loadout || 'Loadout'}
+        title={Locale.ui_equipment || 'Equipment'}
+        bar={false}
+        right={<SectionCount value={equipped} total={gearSlots.length} unit={Locale.ui_equipped_short || 'worn'} />}
+      />
       <div className="player-utility-body">
         <div className="player-utility-column">
           {gearSlots.slice(0, half).map((config) => (
@@ -122,7 +127,7 @@ export const PlayerEquipment: React.FC = () => {
 };
 
 export const QuickAccess: React.FC = () => {
-  const { utility, ready } = useUtilityReady();
+  const { leftInventory, utility, ready } = useUtilityReady();
 
   if (!ready) return null;
 
@@ -132,11 +137,16 @@ export const QuickAccess: React.FC = () => {
 
   if (!quickSlots.length) return null;
 
+  const loaded = quickSlots.filter((config) => isSlotWithItem(leftInventory.items[config.slot - 1] || { slot: 0 })).length;
+
   return (
     <div className="player-utility-quick">
-      <div className="section-header">
-        <h2 className="section-title section-title-sub">{Locale.ui_quick_access || 'Quick access'}</h2>
-      </div>
+      <SectionHead
+        eyebrow={Locale.ui_hotkeys || 'Hotkeys'}
+        title={Locale.ui_quick_access || 'Quick access'}
+        bar={false}
+        right={<SectionCount value={loaded} total={quickSlots.length} unit={Locale.ui_loaded || 'loaded'} />}
+      />
       <div className="player-utility-row">
         {quickSlots.map((config) => (
           <UtilityCell config={config} key={`utility-${config.slot}`} />

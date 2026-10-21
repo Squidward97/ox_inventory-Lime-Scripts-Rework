@@ -50,6 +50,10 @@ if IsDuplicityVersion() then
         bulkstashsave = GetConvarBool('inventory:bulkstashsave', true),
         loglevel = GetConvarInt('inventory:loglevel', 1),
         randomprices = GetConvarBool('inventory:randomprices', false),
+        -- Shops: allow paying for money-priced items from the bank (needs bridge support)
+        cardpayment = GetConvarBool('inventory:cardpayment', true),
+        -- Item required to pay by card, e.g. 'mastercard' ('' = none)
+        carditem = GetConvar('inventory:carditem', ''),
         randomloot = GetConvarBool('inventory:randomloot', true),
         evidencegrade = GetConvarInt('inventory:evidencegrade', 2),
         trimplate = GetConvarBool('inventory:trimplate', true),
@@ -92,6 +96,8 @@ else
         player = lib.player:new(-1),
         autoreload = GetConvarBool('inventory:autoreload', false),
         screenblur = GetConvarBool('inventory:screenblur', true),
+        -- NUI slot style: 'tactical' (UI_STYLE.md clipped-corner tiles) or 'glass' (translucent tiles)
+        uistyle = GetConvar('inventory:uistyle', 'tactical'),
         keys = json.decode(GetConvar('inventory:keys', '')) or { 'F2', 'K', 'TAB' },
         enablekeys = json.decode(GetConvar('inventory:enablekeys', '[249]')),
         aimedfiring = GetConvarBool('inventory:aimedfiring', false),

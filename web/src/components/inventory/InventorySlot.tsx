@@ -31,10 +31,12 @@ interface SlotProps {
   inventoryType: Inventory['type'];
   inventoryGroups: Inventory['groups'];
   item: Slot;
+  /** Skip the hover tooltip, e.g. inside a recipe card that already shows the details */
+  noTooltip?: boolean;
 }
 
 const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> = (
-  { item, inventoryId, inventoryType, inventoryGroups },
+  { item, inventoryId, inventoryType, inventoryGroups, noTooltip },
   ref
 ) => {
   const manager = useDragDropManager();
@@ -155,6 +157,7 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
     !canPurchaseItem(item, { type: inventoryType, groups: inventoryGroups }) || !canCraftItem(item, inventoryType);
   const filters = useAppSelector((state) => state.filters);
   const dimmed = isFilteredOut(item, filters);
+  const rarity = isSlotWithItem(item) ? getItemRarity(item) : undefined;
 
   return (
     <div
@@ -166,17 +169,21 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
       data-over={isOver}
       data-unavailable={unavailable}
       data-dimmed={dimmed}
-      data-rarity={isSlotWithItem(item) ? getItemRarity(item) : undefined}
-      style={{
-        opacity: isDragging ? 0.35 : undefined,
-        backgroundImage: `url(${item?.name ? getItemUrl(item as SlotWithItem) : 'none'}`,
-      }}
+      data-rarity={rarity}
+      style={{ opacity: isDragging ? 0.35 : undefined }}
     >
+      {item?.name && (
+        <div
+          className="item-slot-image"
+          style={{ backgroundImage: `url(${getItemUrl(item as SlotWithItem) || 'none'})` }}
+        />
+      )}
       {hotkey !== undefined && <span className="slot-badge">{hotkey}</span>}
       {isSlotWithItem(item) && (
         <div
           className="item-slot-wrapper"
           onMouseEnter={() => {
+            if (noTooltip) return;
             timerRef.current = window.setTimeout(() => {
               dispatch(openTooltip({ item, inventoryType }));
             }, 500) as unknown as number;
@@ -210,14 +217,19 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
             {inventoryType !== 'shop' && item?.durability !== undefined ? (
               <SegmentedBar
                 percent={item.durability}
-                segments={10}
+                segments={6}
                 tone={durabilityTone(item.durability)}
                 className="item-slot-durability"
               />
             ) : (
               <span />
             )}
-            {item.count > 0 && <span className="item-slot-count">x{item.count.toLocaleString('en-us')}</span>}
+            {item.count > 0 && (
+              <span className="item-slot-count">
+                <span className="item-slot-count-x">×</span>
+                {item.count.toLocaleString('en-us')}
+              </span>
+            )}
           </div>
         </div>
       )}

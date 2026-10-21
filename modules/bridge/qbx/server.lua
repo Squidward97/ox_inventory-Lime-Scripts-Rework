@@ -105,3 +105,34 @@ end
 function server.getOwnedVehicleId(entityId)
     return Entity(entityId).state.vehicleid or exports.qbx_vehicles:GetVehicleIdByPlate(GetVehicleNumberPlateText(entityId))
 end
+
+---Bank balance for card payments in shops.
+---@param inv OxInventory
+---@return number?
+---@diagnostic disable-next-line: duplicate-set-field
+function server.getBankBalance(inv)
+    local player = QBX:GetPlayer(inv.id)
+
+    return player and player.PlayerData.money.bank
+end
+
+---@param inv OxInventory
+---@param amount number
+---@param reason string
+---@return boolean
+---@diagnostic disable-next-line: duplicate-set-field
+function server.removeBankMoney(inv, amount, reason)
+    local player = QBX:GetPlayer(inv.id)
+
+    return player and player.Functions.RemoveMoney('bank', amount, reason) or false
+end
+
+---@param inv OxInventory
+---@param amount number
+---@param reason string
+---@diagnostic disable-next-line: duplicate-set-field
+function server.addBankMoney(inv, amount, reason)
+    local player = QBX:GetPlayer(inv.id)
+
+    if player then player.Functions.AddMoney('bank', amount, reason) end
+end

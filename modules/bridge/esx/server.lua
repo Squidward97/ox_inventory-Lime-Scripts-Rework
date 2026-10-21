@@ -126,3 +126,39 @@ end
 MySQL.ready(function()
 	MySQL.insert('INSERT IGNORE INTO `licenses` (`type`, `label`) VALUES (?, ?)', { 'weapon', 'Weapon License'})
 end)
+
+---Bank balance for card payments in shops.
+---@param inv OxInventory
+---@return number?
+---@diagnostic disable-next-line: duplicate-set-field
+function server.getBankBalance(inv)
+	local player = ESX and ESX.GetPlayerFromId(inv.id)
+	local account = player and player.getAccount('bank')
+
+	return account and account.money
+end
+
+---@param inv OxInventory
+---@param amount number
+---@param reason string
+---@return boolean
+---@diagnostic disable-next-line: duplicate-set-field
+function server.removeBankMoney(inv, amount, reason)
+	local player = ESX and ESX.GetPlayerFromId(inv.id)
+
+	if not player then return false end
+
+	player.removeAccountMoney('bank', amount, reason)
+
+	return true
+end
+
+---@param inv OxInventory
+---@param amount number
+---@param reason string
+---@diagnostic disable-next-line: duplicate-set-field
+function server.addBankMoney(inv, amount, reason)
+	local player = ESX and ESX.GetPlayerFromId(inv.id)
+
+	if player then player.addAccountMoney('bank', amount, reason) end
+end

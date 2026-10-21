@@ -1,66 +1,28 @@
-@use 'sass:math';
-
-// "Tactical street" tokens, see UI_STYLE.md
-@function r($px) {
-  @return math.div($px, 16) * 1rem;
-}
-
-$accent: rgb(var(--accent));
-$drop: rgb(var(--drop));
-$base: #121214;
-$deep: #090a0c;
-$white: #ffffff;
-$zinc100: #f4f4f5;
-$zinc200: #e4e4e7;
-$zinc300: #d4d4d8;
-$zinc400: #a1a1aa;
-$zinc500: #71717a;
-$zinc600: #52525b;
-$zinc700: #3f3f46;
-$red400: #f87171;
-$red500: #ef4444;
-$amber300: #fcd34d;
-
-$display: 'Chakra Petch', sans-serif;
-$mono: 'JetBrains Mono', monospace;
-
-$skew: -14deg;
-$hairline: rgb(255 255 255 / 0.06);
-$hairlineStrong: rgb(255 255 255 / 0.15);
-
-$slotW: r(106);
-$slotH: r(110);
-$slot: $slotW;
-$gap: r(7);
-$gridCols: 5;
-$gridWidth: calc(#{$gridCols} * #{$slotW} + #{$gridCols - 1} * #{$gap});
-
-@function rows($n) {
-  @return calc(#{$n} * #{$slotH} + #{$n - 1} * #{$gap});
-}
-
-@mixin cut($size) {
-  clip-path: polygon(
-    0 0,
-    calc(100% - #{$size}) 0,
-    100% $size,
-    100% 100%,
-    $size 100%,
-    0 calc(100% - #{$size})
-  );
-}
+// shared tokens, functions and mixins (also used by styles/glass.scss)
+@use 'styles/tokens' as *;
 
 // 16px at 1080p, shrinking on narrow aspect ratios so three columns always fit.
 html {
-  // white accent for state; lime ($drop) only marks where a dragged item will land
-  --accent: 244 244 245;
+  // UI_STYLE.md accent: active / primary / yours / success, and drop targets
+  --accent: 200 240 44;
   --drop: 200 240 44;
+
+  // glass slot tuning (inventory:uistyle "glass", see styles/glass.scss); white alpha values
+  --glass-fill: 0.04;
+  --glass-fill-filled: 0.07;
+  --glass-fill-hover: 0.11;
+  --glass-border: 0.07;
+  --glass-border-filled: 0.12;
+  --glass-radius: #{r(10)};
+  // strength of the rarity glow behind items (uncommon and up)
+  --rarity-glow: 0.11;
   font-size: min(1.4815vh, 0.8333vw);
 }
 
 body {
   margin: 0;
   font-family: $display;
+  font-variant-numeric: tabular-nums;
   color: $zinc200;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -226,22 +188,19 @@ input[type='number']::-webkit-outer-spin-button {
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  min-width: r(22);
-  height: r(22);
-  padding: 0 r(6);
-  font-family: $mono;
-  font-size: r(11);
-  font-weight: 600;
+  min-width: r(21);
+  height: r(19);
+  padding: 0 r(5);
+  font-size: r(10);
+  font-weight: 700;
   line-height: 1;
-  color: $zinc200;
-  background: rgb(20 20 22 / 0.9);
-  border: 1px solid $hairlineStrong;
-  border-bottom-width: 2px;
-  border-radius: 2px;
+  color: $zinc100;
+  background: rgb(255 255 255 / 0.12);
+  @include cut(r(4));
 
   &[data-lit='true'] {
-    color: $white;
-    border-color: rgb(255 255 255 / 0.35);
+    color: $base;
+    background: $accent;
   }
 }
 
@@ -361,18 +320,44 @@ input[type='number']::-webkit-outer-spin-button {
 }
 
 .mouse-glyph {
-  width: r(13);
-  height: r(18);
+  width: r(12);
+  height: r(17);
 
   .mouse-glyph-body {
     fill: none;
     stroke: $zinc400;
-    stroke-width: 1.4;
+    stroke-width: 1.5;
   }
 
   .mouse-glyph-lit {
-    fill: $zinc200;
+    fill: $accent;
   }
+}
+
+// rarity colours are item data: used for small bars, glows and edges, never for chrome
+[data-rarity] {
+  --rarity: #{$zinc400};
+  --rarity-rgb: 161 161 170;
+}
+
+[data-rarity='uncommon'] {
+  --rarity: #4ade80;
+  --rarity-rgb: 74 222 128;
+}
+
+[data-rarity='rare'] {
+  --rarity: #60a5fa;
+  --rarity-rgb: 96 165 250;
+}
+
+[data-rarity='epic'] {
+  --rarity: #c084fc;
+  --rarity-rgb: 192 132 252;
+}
+
+[data-rarity='legendary'] {
+  --rarity: #f59e0b;
+  --rarity-rgb: 245 158 11;
 }
 
 // ---------------------------------------------------------------- screen
@@ -399,12 +384,27 @@ input[type='number']::-webkit-outer-spin-button {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  // a solid surface for the glass tiles: deep cool charcoal with a soft lighter pool
-  // behind the middle so the frosted tiles have something to catch
+  // Blue-black surface with depth: a faint cool light from above, getting deeper toward the
+  // bottom, then a soft vignette.
   background:
-    radial-gradient(ellipse 75% 65% at 50% 38%, rgb(54 62 76 / 0.32), transparent 72%),
-    linear-gradient(180deg, rgb(14 16 21 / 0.8), rgb(8 9 12 / 0.88));
-  box-shadow: inset 0 0 240px 60px rgb(0 0 0 / 0.45);
+    radial-gradient(ellipse 65% 45% at 50% -8%, rgb(140 160 190 / 0.09), transparent 70%),
+    radial-gradient(ellipse 70% 60% at 50% 45%, rgb(255 255 255 / 0.025), transparent 70%),
+    linear-gradient(180deg, rgb(11 13 17 / 0.8) 0%, rgb(9 10 12 / 0.74) 40%, rgb(6 7 9 / 0.88) 100%);
+  box-shadow: inset 0 0 200px 50px rgb(6 7 9 / 0.7);
+
+  // the guide's tactical texture: fine diagonal hatching, only around the edges
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      135deg,
+      rgb(255 255 255 / 0.03) 0 1px,
+      transparent 1px r(9)
+    );
+    -webkit-mask-image: radial-gradient(ellipse 75% 70% at 50% 50%, transparent 45%, #000 100%);
+    mask-image: radial-gradient(ellipse 75% 70% at 50% 50%, transparent 45%, #000 100%);
+  }
 }
 
 // ---------------------------------------------------------------- toolbar
@@ -412,7 +412,7 @@ input[type='number']::-webkit-outer-spin-button {
 .toolbar {
   position: absolute;
   top: r(48);
-  left: r(40);
+  left: r(50);
   display: flex;
   align-items: center;
   gap: r(6);
@@ -423,35 +423,33 @@ input[type='number']::-webkit-outer-spin-button {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: r(36);
-  height: r(36);
+  width: r(40);
+  height: r(34);
   padding: 0;
-  background: rgb(20 20 22 / 0.75);
-  border: 1px solid rgb(255 255 255 / 0.1);
-  border-radius: 3px;
-  color: $zinc300;
+  transform: skewX($skew);
+  background: rgb(255 255 255 / 0.06);
+  border: none;
+  color: $zinc400;
   cursor: pointer;
   transition:
-    border-color 150ms ease-out,
     color 150ms ease-out,
     background-color 150ms ease-out;
 
+  // counter-skew so the icon stays upright
   svg {
     width: r(18);
     height: r(18);
+    transform: skewX(-$skew);
   }
 
   &:hover {
     color: $white;
-    border-color: rgb(255 255 255 / 0.25);
+    background: rgb(255 255 255 / 0.1);
   }
 
-  // active filter: lit icon and a lime underline, no fill
   &[data-active='true'] {
-    color: $accent;
-    background: rgb(255 255 255 / 0.06);
-    border-color: rgb(255 255 255 / 0.18);
-    box-shadow: inset 0 -2px 0 $accent;
+    color: $base;
+    background: $accent;
   }
 }
 
@@ -461,11 +459,10 @@ input[type='number']::-webkit-outer-spin-button {
   gap: r(8);
   box-sizing: border-box;
   width: r(250);
-  height: r(36);
-  padding: 0 r(12);
-  background: rgb(20 20 22 / 0.75);
-  border: 1px solid rgb(255 255 255 / 0.1);
-  border-radius: 3px;
+  height: r(34);
+  margin: 0 r(8) 0 0;
+  padding: 0 r(2);
+  border-bottom: 1px solid $hairlineStrong;
   color: $zinc500;
   transition: border-color 150ms ease-out;
 
@@ -491,8 +488,7 @@ input[type='number']::-webkit-outer-spin-button {
   }
 
   &:focus-within {
-    border-color: rgb(255 255 255 / 0.2);
-    box-shadow: inset 0 -2px 0 $accent;
+    border-bottom-color: $accent;
     color: $accent;
   }
 }
@@ -503,52 +499,62 @@ input[type='number']::-webkit-outer-spin-button {
   margin-left: r(4);
 }
 
-.toolbar-info {
-  position: relative;
-}
-
-.toolbar-popover {
+.key-hints {
   position: absolute;
-  top: calc(100% + #{r(8)});
-  left: 0;
-  width: r(380);
+  left: r(50);
+  right: r(52);
+  bottom: r(12);
   display: flex;
-  flex-direction: column;
-  gap: r(10);
-  padding: r(14) r(16) r(10) r(19);
-  background: rgb(20 20 22 / 0.96);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
-}
+  align-items: center;
+  justify-content: space-between;
+  gap: r(24);
 
-.key-hints-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+  .key-hints-context {
+    font-size: r(11);
+    color: $zinc500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .key-hints-list {
+    display: flex;
+    align-items: center;
+    gap: r(16);
+    flex-shrink: 0;
+  }
+
+  .key-hints-divider {
+    width: 1px;
+    height: r(14);
+    transform: skewX(-20deg);
+    background: rgb(255 255 255 / 0.12);
+  }
 }
 
 .key-hint {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: r(16);
-  padding: r(8) 0;
+  gap: r(8);
 
   .key-hint-keys {
     display: flex;
     align-items: center;
     gap: r(4);
-    flex-shrink: 0;
   }
 
   .key-hint-plus {
-    font-size: r(10);
+    font-size: r(9);
+    font-weight: 700;
     color: $zinc600;
   }
 
   .key-hint-label {
-    font-size: r(12);
+    font-size: r(10);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
     color: $zinc300;
-    text-align: right;
   }
 }
 
@@ -559,17 +565,20 @@ input[type='number']::-webkit-outer-spin-button {
   top: r(112);
   left: r(50);
   right: r(52);
-  bottom: 0;
+  // columns are exactly two sections tall (see $headH) with the key-hint footer below
+  bottom: r(68);
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(3, auto);
+  // one row exactly as tall as the container; hints under a grid hang below without stretching it
+  grid-template-rows: minmax(0, 1fr);
+  justify-content: space-between;
 }
 
 .inventory-column {
   display: flex;
   flex-direction: column;
-  gap: r(36);
+  gap: $sectionGap;
   min-width: 0;
-  padding-bottom: r(40);
 
   > * {
     width: $gridWidth;
@@ -592,28 +601,32 @@ input[type='number']::-webkit-outer-spin-button {
   }
 }
 
+.section-head {
+  height: $headH;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: r(8);
+
+  .eyebrow {
+    margin-bottom: r(2);
+  }
+}
+
 .section-header {
   position: relative;
   display: flex;
   align-items: baseline;
   gap: r(10);
   min-height: r(24);
-  padding-bottom: r(10);
-  border-bottom: 1px solid rgb(255 255 255 / 0.08);
-
-  // sections with a weight bar use it as their divider instead of the hairline
-  &[data-has-bar='true'] {
-    padding-bottom: r(2);
-    border-bottom: none;
-  }
 
   .section-title {
     margin: 0;
-    font-size: r(21);
+    font-size: r(24);
     font-weight: 700;
     font-style: italic;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.02em;
     line-height: 1;
     color: $white;
     white-space: nowrap;
@@ -647,18 +660,24 @@ input[type='number']::-webkit-outer-spin-button {
   .section-weight {
     display: flex;
     align-items: center;
-    gap: r(6);
-    font-size: r(17);
-    font-weight: 700;
-    font-style: italic;
-    text-transform: uppercase;
-    color: $white;
+    gap: r(5);
+    font-family: $mono;
+    font-size: r(13);
+    color: $zinc200;
     line-height: 1;
 
     .icon {
-      width: r(16);
-      height: r(16);
-      color: $zinc300;
+      width: r(15);
+      height: r(15);
+      margin-right: r(2);
+      color: $zinc500;
+    }
+
+    .unit {
+      font-family: $display;
+      font-size: r(10);
+      font-weight: 600;
+      letter-spacing: 0.14em;
     }
 
     &[data-tone='warning'] {
@@ -668,6 +687,19 @@ input[type='number']::-webkit-outer-spin-button {
     &[data-tone='danger'] {
       color: $red400;
     }
+  }
+}
+
+.section-rule {
+  display: flex;
+  align-items: center;
+  height: r(5);
+
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgb(255 255 255 / 0.1);
   }
 }
 
@@ -682,7 +714,7 @@ input[type='number']::-webkit-outer-spin-button {
 }
 
 .section-hint {
-  margin-top: r(4);
+  margin-top: r(-2);
 }
 
 // ---------------------------------------------------------------- inventory grids
@@ -692,6 +724,7 @@ input[type='number']::-webkit-outer-spin-button {
   flex-direction: column;
   gap: r(12);
 }
+
 
 .inventory-grid-collapse-button {
   display: flex;
@@ -771,15 +804,11 @@ input[type='number']::-webkit-outer-spin-button {
 // ---------------------------------------------------------------- slots
 
 .inventory-slot {
-  --rarity: #{$zinc500};
   position: relative;
   box-sizing: border-box;
-  background-color: rgb(255 255 255 / 0.04);
-  background-repeat: no-repeat;
-  background-position: center 45%;
-  background-size: 70%;
-  border: 1px solid rgb(255 255 255 / 0.1);
-  border-radius: 3px;
+  background-color: rgb(255 255 255 / var(--glass-fill));
+  border: 1px solid rgb(255 255 255 / var(--glass-border));
+  border-radius: var(--glass-radius);
   overflow: hidden;
   color: $zinc200;
   image-rendering: -webkit-optimize-contrast;
@@ -789,30 +818,18 @@ input[type='number']::-webkit-outer-spin-button {
     opacity 150ms ease-out;
 
   &[data-filled='true'] {
-    background-color: rgb(255 255 255 / 0.08);
-    border-color: rgb(255 255 255 / 0.16);
+    background-color: rgb(255 255 255 / var(--glass-fill-filled));
+    border-color: rgb(255 255 255 / var(--glass-border-filled));
   }
 
-  // rarity as a soft glow rising from the bottom edge; common items get none
-  &[data-filled='true']:not([data-rarity='common'])::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 45%;
-    background: linear-gradient(0deg, var(--rarity), transparent);
-    opacity: 0.18;
-    pointer-events: none;
-  }
 
   &[data-filled='true']:hover {
-    background-color: rgb(255 255 255 / 0.13);
-    border-color: rgb(255 255 255 / 0.35);
+    background-color: rgb(255 255 255 / var(--glass-fill-hover));
+    border-color: rgb(255 255 255 / 0.3);
   }
 
   &[data-over='true'] {
-    background-color: rgb(var(--drop) / 0.1);
+    background-color: rgb(var(--drop) / 0.08);
     border-color: $drop;
   }
 
@@ -825,52 +842,65 @@ input[type='number']::-webkit-outer-spin-button {
     opacity: 0.45;
     filter: grayscale(1) brightness(0.5);
   }
+}
 
-  &[data-rarity='uncommon'] {
-    --rarity: #4ade80;
-  }
+// rarity in the slot: a stripe along the bottom-left corner (quiet grey for common items)
+.inventory-slot[data-filled='true']::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: r(18);
+  height: r(18);
+  background: linear-gradient(45deg, transparent 38%, var(--rarity) 38%, var(--rarity) 52%, transparent 52%);
+  pointer-events: none;
+}
 
-  &[data-rarity='rare'] {
-    --rarity: #60a5fa;
-  }
+.inventory-slot[data-filled='true'][data-rarity='common']::after {
+  opacity: 0.45;
+}
 
-  &[data-rarity='epic'] {
-    --rarity: #a855f7;
-  }
-
-  &[data-rarity='legendary'] {
-    --rarity: #f59e0b;
-  }
+// ...plus a glow over the whole slot for uncommon and up: an even tint that deepens toward
+// the bottom, and a soft inner glow from every edge
+:root .inventory-slot[data-filled='true'][data-rarity]:not([data-rarity='common']) {
+  background-image: linear-gradient(
+    0deg,
+    rgb(var(--rarity-rgb) / var(--rarity-glow)),
+    rgb(var(--rarity-rgb) / calc(var(--rarity-glow) * 0.35))
+  );
+  box-shadow: inset 0 0 r(20) rgb(var(--rarity-rgb) / calc(var(--rarity-glow) * 1.2));
 }
 
 .slot-badge {
   position: absolute;
-  top: r(5);
-  left: r(5);
+  top: r(6);
+  left: r(8);
   z-index: 2;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: r(15);
-  height: r(15);
-  padding: 0 r(3);
-  box-sizing: border-box;
-  background: rgb(255 255 255 / 0.18);
-  border-radius: 2px;
-  color: $zinc300;
-  font-family: $mono;
-  font-size: r(10);
-  font-weight: 600;
+  color: $zinc600;
+  font-size: r(14);
+  font-weight: 700;
+  font-style: italic;
   line-height: 1;
   pointer-events: none;
 }
 
 .inventory-slot[data-filled='true'] .slot-badge {
-  background: $accent;
-  color: $base;
+  color: $zinc200;
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.9);
+}
+
+.item-slot-image {
+  position: absolute;
+  inset: r(12) r(14) r(20);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  pointer-events: none;
 }
 
 .item-slot-wrapper {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -879,10 +909,13 @@ input[type='number']::-webkit-outer-spin-button {
 
 .item-slot-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: flex-end;
-  padding: r(6) r(7) 0;
+  gap: r(6);
+  min-height: r(12);
+  padding: r(7) r(8) 0;
 }
+
 
 .item-slot-footer {
   display: flex;
@@ -893,11 +926,17 @@ input[type='number']::-webkit-outer-spin-button {
 }
 
 .item-slot-count {
-  font-size: r(14);
-  font-weight: 700;
-  color: $white;
+  font-family: $mono;
+  font-size: r(12);
+  font-weight: 600;
+  color: $zinc100;
   line-height: 1;
   text-shadow: 0 1px 3px rgb(0 0 0 / 0.9);
+
+  .item-slot-count-x {
+    color: $zinc500;
+    margin-right: 1px;
+  }
 }
 
 .item-slot-price {
@@ -923,9 +962,9 @@ input[type='number']::-webkit-outer-spin-button {
 
 .item-slot-durability {
   flex: 1;
-  max-width: r(48);
+  max-width: r(50);
   height: r(3);
-  gap: 1px;
+  gap: 2px;
   margin-bottom: r(4);
 }
 
@@ -971,6 +1010,24 @@ body.inv-dragging {
   }
 }
 
+// tactical: solid guide tiles with clipped corners
+:root[data-uistyle='tactical'] .inventory-slot {
+  background-color: rgb(9 10 12 / 0.6);
+  border-color: $hairline;
+  border-radius: 0;
+  @include cut(r(8));
+
+  &[data-filled='true'] {
+    background-color: rgb(9 10 12 / 0.78);
+    border-color: rgb(255 255 255 / 0.08);
+  }
+
+  &[data-filled='true']:hover {
+    background-color: rgb(24 27 33 / 0.92);
+    border-color: rgb(255 255 255 / 0.2);
+  }
+}
+
 // ---------------------------------------------------------------- equipment
 
 .player-utility-wrapper {
@@ -983,12 +1040,13 @@ body.inv-dragging {
   display: flex;
   align-items: stretch;
   justify-content: space-between;
+  height: rows(3);
 }
 
 .player-utility-column {
   display: flex;
   flex-direction: column;
-  gap: r(28);
+  gap: $gap;
 }
 
 .player-utility-slot {
@@ -1037,7 +1095,7 @@ body.inv-dragging {
 .player-utility-quick {
   display: flex;
   flex-direction: column;
-  gap: r(10);
+  gap: r(12);
 }
 
 .player-utility-row {
@@ -1084,7 +1142,7 @@ body.inv-dragging {
   flex-direction: column;
   gap: r(4);
   padding: r(7) r(12) r(7) r(14);
-  background: rgb(20 20 22 / 0.95);
+  background: rgb(14 16 19 / 0.95);
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
 
   .body-svg-tooltip-part {
@@ -1113,8 +1171,7 @@ body.inv-dragging {
   align-items: end;
   column-gap: r(24);
   row-gap: r(10);
-  padding-top: r(20);
-  border-top: 1px solid $hairline;
+  margin-top: auto;
 
   .inventory-control-actions {
     display: flex;
@@ -1139,6 +1196,467 @@ body.inv-dragging {
   }
 }
 
+// ---------------------------------------------------------------- item cards (crafting, shop)
+
+// recipe and shop cards fill the same seven-row block a grid would, so the column keeps the shared baseline
+.card-list {
+  height: rows(7);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: r(8);
+}
+
+.item-card {
+  display: flex;
+  gap: r(14);
+  flex-shrink: 0;
+  padding: r(10) r(12) r(10) r(10);
+  background: rgb(9 10 12 / 0.6);
+  border: 1px solid $hairline;
+  transition:
+    border-color 120ms ease-out,
+    background-color 120ms ease-out;
+
+  &:hover {
+    background: rgb(9 10 12 / 0.75);
+    border-color: rgb(255 255 255 / 0.14);
+  }
+}
+
+.item-card-tile {
+  position: relative;
+  flex-shrink: 0;
+  width: r(84);
+  height: r(84);
+
+  .inventory-slot {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.item-card-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: r(7);
+}
+
+.item-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: r(10);
+}
+
+.item-card-name {
+  margin: 0;
+  font-size: r(16);
+  font-weight: 700;
+  font-style: italic;
+  text-transform: uppercase;
+  line-height: 1;
+  color: $white;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.item-card-time {
+  display: flex;
+  align-items: center;
+  gap: r(4);
+  flex-shrink: 0;
+  font-size: r(11);
+  color: $zinc400;
+
+  .icon {
+    width: r(13);
+    height: r(13);
+  }
+}
+
+.item-card-description {
+  font-size: r(11.5);
+  color: $zinc500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.item-card-ingredients {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: r(4) r(14);
+}
+
+.recipe-ingredient {
+  display: flex;
+  align-items: center;
+  gap: r(6);
+  min-width: 0;
+
+  img {
+    width: r(20);
+    height: r(20);
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+
+  .recipe-ingredient-name {
+    flex: 1;
+    min-width: 0;
+    font-size: r(11.5);
+    color: $zinc300;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .recipe-ingredient-count {
+    flex-shrink: 0;
+    font-size: r(11.5);
+    font-weight: 700;
+    color: $zinc100;
+  }
+
+  &[data-ok='false'] {
+    .recipe-ingredient-name {
+      color: $zinc500;
+    }
+
+    .recipe-ingredient-count {
+      color: $red400;
+    }
+  }
+}
+
+.item-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: r(12);
+  margin-top: r(2);
+}
+
+.card-stepper {
+  display: flex;
+  align-items: center;
+  gap: r(4);
+
+  button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: r(22);
+    height: r(22);
+    padding: 0;
+    background: rgb(255 255 255 / 0.06);
+    border: none;
+    color: $zinc300;
+    cursor: pointer;
+    @include cut(r(4));
+
+    svg {
+      width: r(12);
+      height: r(12);
+    }
+
+    &:hover:not(:disabled) {
+      background: rgb(255 255 255 / 0.12);
+      color: $white;
+    }
+
+    &:disabled {
+      opacity: 0.35;
+      cursor: default;
+    }
+  }
+
+  .card-stepper-value {
+    min-width: r(26);
+    text-align: center;
+    font-size: r(13);
+    font-weight: 700;
+    color: $zinc100;
+  }
+}
+
+.card-action {
+  padding: r(7) r(20);
+
+  .item-card[data-craftable='true'] &,
+  .item-card[data-available='true'] & {
+    background: $accent;
+    color: $base;
+
+    &:hover {
+      filter: brightness(1.08);
+    }
+  }
+
+  &:disabled {
+    color: $zinc500;
+    cursor: default;
+  }
+}
+
+// shop cards: the tile's own price tag is redundant next to the card's price
+.shop-card .item-slot-price {
+  display: none;
+}
+
+.shop-price {
+  display: inline-flex;
+  align-items: center;
+  gap: r(4);
+  flex-shrink: 0;
+  font-size: r(16);
+  font-weight: 700;
+  font-style: italic;
+  line-height: 1;
+  color: $white;
+
+  &[data-currency='black_money'] {
+    color: $red400;
+  }
+
+  img {
+    width: r(18);
+    height: r(18);
+    object-fit: contain;
+  }
+
+  .shop-price-unit {
+    font-size: r(10);
+    font-style: normal;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: $zinc500;
+  }
+}
+
+.shop-card-meta {
+  display: flex;
+  align-items: center;
+  gap: r(6);
+  font-size: r(11);
+  color: $zinc400;
+
+  [data-tone='warning'] {
+    color: $amber300;
+  }
+
+  [data-tone='danger'] {
+    color: $red400;
+  }
+}
+
+.shop-total {
+  display: flex;
+  align-items: baseline;
+  gap: r(8);
+  margin-right: auto;
+
+  .shop-price {
+    font-size: r(14);
+  }
+}
+
+// shop: cards above, checkout docked below, together filling the seven-row block
+.shop-body {
+  height: rows(7);
+  display: flex;
+  flex-direction: column;
+  gap: r(10);
+
+  .card-list {
+    flex: 1;
+    min-height: 0;
+    height: auto;
+  }
+}
+
+.shop-in-cart {
+  color: $accent;
+}
+
+.shop-checkout {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: r(10);
+  padding: r(12) r(14) r(12) r(17);
+  background: rgb(14 16 19 / 0.92);
+  box-shadow: inset 3px 0 0 $accent;
+}
+
+.shop-checkout-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.shop-clear {
+  padding: 0;
+  background: none;
+  border: none;
+  color: $zinc500;
+  font-size: r(10);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  cursor: pointer;
+
+  &:hover {
+    color: $white;
+  }
+}
+
+.shop-cart-lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: r(150);
+  overflow-y: auto;
+}
+
+.shop-cart-line {
+  display: flex;
+  align-items: center;
+  gap: r(10);
+  padding: r(5) 0;
+
+  & + & {
+    border-top: 1px solid $hairline;
+  }
+
+  img {
+    width: r(28);
+    height: r(28);
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+
+  .shop-cart-name {
+    flex: 1;
+    min-width: 0;
+    font-size: r(12);
+    color: $zinc200;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .shop-price {
+    font-size: r(13);
+    min-width: r(56);
+    justify-content: flex-end;
+  }
+}
+
+.shop-cart-remove {
+  display: flex;
+  padding: 0;
+  background: none;
+  border: none;
+  color: $zinc500;
+  cursor: pointer;
+
+  svg {
+    width: r(14);
+    height: r(14);
+  }
+
+  &:hover {
+    color: $red400;
+  }
+}
+
+.shop-cart-empty {
+  padding: r(4) 0;
+}
+
+.shop-checkout-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: r(12);
+}
+
+.shop-methods {
+  display: flex;
+  align-items: center;
+  gap: r(6);
+
+  .tab {
+    padding: r(7) r(14);
+    font-size: r(11);
+
+    &[data-active='true'] {
+      background: $accent;
+      color: $base;
+    }
+
+    &:disabled {
+      opacity: 0.35;
+      cursor: default;
+    }
+  }
+}
+
+.shop-balance {
+  display: flex;
+  flex-direction: column;
+  gap: r(4);
+  margin-left: r(8);
+
+  .shop-price {
+    font-size: r(13);
+  }
+}
+
+.shop-pay {
+  padding: r(9) r(18);
+
+  > span {
+    gap: r(8);
+  }
+
+  .shop-price {
+    color: inherit;
+    font-size: r(13);
+
+    &[data-currency='black_money'] {
+      color: #991b1b;
+    }
+  }
+
+  .shop-pay-plus {
+    opacity: 0.55;
+  }
+
+  &[data-ready='true'] {
+    background: $accent;
+    color: $base;
+
+    &:hover {
+      filter: brightness(1.08);
+    }
+  }
+
+  &:disabled {
+    color: $zinc500;
+    cursor: default;
+  }
+}
+
 // ---------------------------------------------------------------- tooltip
 
 .tooltip-wrapper {
@@ -1150,9 +1668,51 @@ body.inv-dragging {
   box-sizing: border-box;
   width: r(256);
   padding: r(12) r(14) r(12) r(17);
-  background: rgb(20 20 22 / 0.95);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
+  background: rgb(14 16 19 / 0.95);
+  box-shadow: inset 3px 0 0 var(--rarity, #{$accent});
   color: $zinc200;
+
+  &:not([data-rarity='common']) {
+    background:
+      radial-gradient(ellipse 80% 55% at 0% 0%, rgb(var(--rarity-rgb) / 0.16), transparent 70%),
+      rgb(14 16 19 / 0.95);
+  }
+
+  .tooltip-name .slash {
+    background: var(--rarity, #{$accent});
+  }
+}
+
+.tooltip-rarity {
+  display: flex;
+  align-items: center;
+  gap: r(10);
+  margin-top: r(-3);
+
+  .tooltip-rarity-label {
+    font-size: r(10);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.24em;
+    line-height: 1;
+    color: var(--rarity);
+  }
+
+  .tooltip-rarity-pips {
+    display: flex;
+    gap: 2px;
+
+    span {
+      width: r(10);
+      height: r(4);
+      transform: skewX($skew);
+      background: rgb(255 255 255 / 0.1);
+    }
+
+    span[data-on='true'] {
+      background: var(--rarity);
+    }
+  }
 }
 
 .tooltip-eyebrow-row {
@@ -1166,7 +1726,7 @@ body.inv-dragging {
   line-height: 1;
 
   .tooltip-kind {
-    color: $zinc300;
+    color: $accent;
   }
 
   .tooltip-context {
@@ -1308,7 +1868,7 @@ body.inv-dragging {
   display: flex;
   flex-direction: column;
   padding: r(6) 0;
-  background: rgb(20 20 22 / 0.96);
+  background: rgb(14 16 19 / 0.96);
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.07);
   outline: none;
   @include cut(r(8));
@@ -1335,8 +1895,8 @@ body.inv-dragging {
   &:focus,
   &[data-open] {
     color: $white;
-    background: linear-gradient(90deg, rgb(255 255 255 / 0.07), transparent 85%);
-    box-shadow: inset 2px 0 0 $accent;
+    background: linear-gradient(90deg, rgb(var(--accent) / 0.14), transparent 80%);
+    box-shadow: inset 3px 0 0 $accent;
   }
 
   &:disabled {
@@ -1414,6 +1974,10 @@ body.inv-dragging {
 .item-notification-item-box {
   width: $slotW;
   height: $slotH;
+  // notifications still draw the item as the tile's own background
+  background-repeat: no-repeat;
+  background-position: center 45%;
+  background-size: 70%;
 }
 
 // ---------------------------------------------------------------- transitions

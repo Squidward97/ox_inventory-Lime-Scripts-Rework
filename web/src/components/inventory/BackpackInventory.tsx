@@ -4,6 +4,7 @@ import { selectBackpackInventory, selectUtilityConfig } from '../../store/invent
 import { InventoryType } from '../../typings';
 import { Locale } from '../../store/locale';
 import { BackpackOutlineIcon } from '../utils/icons/TablerIcons';
+import SectionHead from './SectionHead';
 
 const BackpackInventory: React.FC = () => {
   const backpackInventory = useAppSelector(selectBackpackInventory);
@@ -13,6 +14,7 @@ const BackpackInventory: React.FC = () => {
     return (
       <InventoryGrid
         inventory={backpackInventory}
+        eyebrow={Locale.ui_backpack || 'Backpack'}
         title={backpackInventory.label || Locale.ui_backpack || 'Backpack'}
         rows={3}
       />
@@ -23,9 +25,7 @@ const BackpackInventory: React.FC = () => {
 
   return (
     <div className="inventory-grid-wrapper">
-      <div className="section-header">
-        <h2 className="section-title">{Locale.ui_active_backpack || 'Active backpack'}</h2>
-      </div>
+      <SectionHead eyebrow={Locale.ui_backpack || 'Backpack'} title={Locale.ui_none_equipped || 'None equipped'} />
       <div className="empty-state">
         <BackpackOutlineIcon className="empty-state-icon" />
         <p className="empty-state-title">{Locale.ui_no_backpack || 'No active backpack'}</p>

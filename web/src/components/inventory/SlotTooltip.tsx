@@ -4,7 +4,15 @@ import { Items } from '../../store/items';
 import { Locale } from '../../store/locale';
 import { useAppSelector } from '../../store';
 import { ClockIcon } from '../utils/icons/TablerIcons';
-import { formatWeight, getInventoryKind, getItemUrl, padCount } from '../../helpers';
+import {
+  formatWeight,
+  getInventoryKind,
+  getItemRarity,
+  getItemUrl,
+  getRarityTier,
+  padCount,
+  RARITY_TIERS,
+} from '../../helpers';
 import Markdown from '../utils/Markdown';
 import SegmentedBar, { durabilityTone } from '../utils/SegmentedBar';
 
@@ -39,6 +47,8 @@ const SlotTooltip: React.ForwardRefRenderFunction<
       : Locale.ui_kind_item || 'Item';
   const context = item.metadata?.type || getInventoryKind(inventoryType);
   const name = item.metadata?.label || itemData?.label || item.name;
+  const rarity = getItemRarity(item);
+  const tier = getRarityTier(rarity);
 
   const extraMetadata = additionalMetadata.filter(
     (data: { metadata: string; value: string }) => item.metadata && item.metadata[data.metadata]
@@ -55,7 +65,7 @@ const SlotTooltip: React.ForwardRefRenderFunction<
       extraMetadata.length > 0);
 
   return (
-    <div className="tooltip-wrapper cut-sm" ref={ref} style={style}>
+    <div className="tooltip-wrapper cut-sm" ref={ref} style={style} data-rarity={rarity}>
       <div className="tooltip-eyebrow-row">
         <span className="tooltip-kind">{kind}</span>
         <span className="dim-slash">/</span>
@@ -76,6 +86,15 @@ const SlotTooltip: React.ForwardRefRenderFunction<
         <span className="slash" />
         <span>{name}</span>
         {item.count > 1 && <span className="tooltip-count">×{item.count.toLocaleString('en-us')}</span>}
+      </div>
+
+      <div className="tooltip-rarity">
+        <span className="tooltip-rarity-label">{Locale[`ui_rarity_${rarity}`] || rarity}</span>
+        <span className="tooltip-rarity-pips">
+          {RARITY_TIERS.map((_, index) => (
+            <span key={index} data-on={index < tier} />
+          ))}
+        </span>
       </div>
 
       {description && <Markdown content={description} className="tooltip-description" />}

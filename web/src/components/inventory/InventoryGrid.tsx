@@ -6,7 +6,8 @@ import { useAppSelector } from '../../store';
 import { selectUtilityConfig } from '../../store/inventory';
 import { useIntersection } from '../../hooks/useIntersection';
 import { ChevronDownIcon, WeightIcon } from '../utils/icons/TablerIcons';
-import SegmentedBar, { weightTone } from '../utils/SegmentedBar';
+import { weightTone } from '../utils/SegmentedBar';
+import SectionHead from './SectionHead';
 
 const PAGE_SIZE = 30;
 
@@ -16,8 +17,8 @@ const formatKg = (grams: number) =>
 interface Props {
   inventory: Inventory;
   title: string;
-  /** Small muted label after the title, e.g. the inventory kind */
-  tag?: string;
+  /** Accent label above the title, e.g. the inventory kind */
+  eyebrow?: string;
   /** Fixed number of visible rows; the rest scrolls */
   rows?: number;
   /** Grow with the content up to this many rows */
@@ -25,7 +26,7 @@ interface Props {
   hint?: string;
 }
 
-const InventoryGrid: React.FC<Props> = ({ inventory, title, tag, rows, maxRows, hint }) => {
+const InventoryGrid: React.FC<Props> = ({ inventory, title, eyebrow, rows, maxRows, hint }) => {
   const weight = useMemo(
     () => (inventory.maxWeight !== undefined ? Math.floor(getTotalWeight(inventory.items) * 1000) / 1000 : 0),
     [inventory.maxWeight, inventory.items]
@@ -73,28 +74,32 @@ const InventoryGrid: React.FC<Props> = ({ inventory, title, tag, rows, maxRows, 
         } as React.CSSProperties
       }
     >
-      <div className="section-header" data-has-bar={hasWeight}>
-        <h2 className="section-title">{title}</h2>
-        {tag && <span className="section-tag">{tag}</span>}
-        <div className="section-header-right">
-          {hasWeight && (
+      <SectionHead
+        eyebrow={eyebrow}
+        title={title}
+        percent={hasWeight ? weightPercent : undefined}
+        tone={weightTone(weightPercent)}
+        right={
+          <>
+            {hasWeight && (
             <span className="section-weight" data-tone={weightTone(weightPercent)}>
               <WeightIcon className="icon" />
-              {formatKg(weight)} / {formatKg(inventory.maxWeight!)} kg
+              {formatKg(weight)}
+              <span className="dim">/</span>
+              {formatKg(inventory.maxWeight!)}
+              <span className="unit">kg</span>
             </span>
-          )}
-          <button
-            className="inventory-grid-collapse-button"
-            data-collapsed={collapsed}
-            onClick={() => setCollapsed((previous) => !previous)}
-          >
-            <ChevronDownIcon />
-          </button>
-        </div>
-      </div>
-      {hasWeight && (
-        <SegmentedBar percent={weightPercent} segments={40} tone={weightTone(weightPercent)} className="section-bar" />
-      )}
+            )}
+            <button
+              className="inventory-grid-collapse-button"
+              data-collapsed={collapsed}
+              onClick={() => setCollapsed((previous) => !previous)}
+            >
+              <ChevronDownIcon />
+            </button>
+          </>
+        }
+      />
       <div className="inventory-grid-container" ref={containerRef}>
         {visibleItems.slice(0, (page + 1) * PAGE_SIZE).map((item, index) => (
           <InventorySlot
