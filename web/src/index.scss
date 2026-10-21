@@ -365,19 +365,9 @@ input[type='number']::-webkit-outer-spin-button {
 .inventory-wrapper {
   position: absolute;
   inset: 0;
-  animation: inventory-open 200ms ease-out;
 }
 
-@keyframes inventory-open {
-  from {
-    opacity: 0;
-    transform: scale(0.97);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
+// the open sequence and other motion live in styles/motion.scss
 
 // Page overlay from the style guide; the game itself is blurred client-side (inventory:screenblur).
 .inventory-backdrop {
@@ -2027,7 +2017,6 @@ body.inv-dragging {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .inventory-wrapper,
   .body-svg-injured {
     animation: none;
   }

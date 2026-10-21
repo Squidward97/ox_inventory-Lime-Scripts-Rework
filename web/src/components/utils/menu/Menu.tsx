@@ -77,9 +77,18 @@ export const MenuComponent = React.forwardRef<HTMLButtonElement, MenuProps & Rea
       placement: isNested ? 'right-start' : 'bottom-start',
       middleware: [offset({ mainAxis: isNested ? 0 : 4, alignmentAxis: isNested ? -4 : 0 }), flip(), shift()],
       whileElementsMounted: autoUpdate,
+      // position with top/left so transform is free for the enter transition
+      transform: false,
     });
 
-    const { isMounted, styles } = useTransitionStyles(context);
+    const { isMounted, styles } = useTransitionStyles(context, {
+      duration: { open: 160, close: 100 },
+      initial: { opacity: 0, transform: 'scale(0.95)' },
+      common: ({ side }) => ({
+        transformOrigin: side === 'top' ? 'bottom left' : 'top left',
+        transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)',
+      }),
+    });
 
     useEffect(() => {
       if (isNested) return;

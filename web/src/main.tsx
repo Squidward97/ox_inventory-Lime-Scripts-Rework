@@ -16,6 +16,7 @@ import '@fontsource/inter/600.css';
 import './index.scss';
 import './styles/glass.scss';
 import './styles/minimal.scss';
+import './styles/motion.scss';
 import { ItemNotificationsProvider } from './components/utils/ItemNotifications';
 import { isEnvBrowser } from './utils/misc';
 

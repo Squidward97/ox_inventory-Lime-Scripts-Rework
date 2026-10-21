@@ -1,0 +1,255 @@
+@use 'sass:math';
+@use 'tokens' as *;
+
+// Motion for every theme: a staggered open sequence plus small reactions to hover, press, drop
+// and add-to-cart. Only opacity, transform and clip-path animate, so it stays cheap in game.
+// Entrance animations use fill-mode `backwards` so nothing is pinned once they finish (slots
+// still fade while dragged, dimmed slots still dim). Off under prefers-reduced-motion.
+
+$easeOut: cubic-bezier(0.22, 1, 0.36, 1);
+$easeSpring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+$columnDelay: 50ms;
+$slotDelay: 140ms;
+$slotStep: 18ms;
+$gridCols: 5;
+
+@keyframes motion-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes motion-rise {
+  from {
+    opacity: 0;
+    transform: translateY(r(14));
+  }
+}
+
+@keyframes motion-drop {
+  from {
+    opacity: 0;
+    transform: translateY(r(-8));
+  }
+}
+
+@keyframes motion-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+}
+
+@keyframes motion-slide {
+  from {
+    opacity: 0;
+    transform: translateX(r(-10));
+  }
+}
+
+// bars draw in from the left
+@keyframes motion-reveal {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+}
+
+@keyframes motion-drop-pulse {
+  from {
+    background-color: rgb(var(--drop) / 0.05);
+  }
+  to {
+    background-color: rgb(var(--drop) / 0.16);
+  }
+}
+
+// ------------------------------------------------------------ open sequence
+
+.inventory-backdrop {
+  animation: motion-fade 260ms ease-out backwards;
+}
+
+.toolbar {
+  animation: motion-drop 360ms $easeOut 40ms backwards;
+}
+
+.inventory-column {
+  animation: motion-rise 460ms $easeOut backwards;
+
+  @for $i from 1 through 3 {
+    &:nth-child(#{$i}) {
+      animation-delay: $columnDelay * $i;
+    }
+  }
+}
+
+.key-hints {
+  animation: motion-fade 400ms ease-out 260ms backwards;
+}
+
+// slots ripple in diagonally from the top-left of each grid
+.inventory-grid-container > .inventory-slot,
+.player-utility-slot {
+  animation: motion-pop 300ms $easeOut backwards;
+}
+
+@for $i from 1 through 50 {
+  $row: math.floor(math.div($i - 1, $gridCols));
+  $col: ($i - 1) % $gridCols;
+
+  .inventory-grid-container > .inventory-slot:nth-child(#{$i}) {
+    animation-delay: $slotDelay + ($row + $col) * $slotStep;
+  }
+}
+
+@for $i from 1 through 5 {
+  .player-utility-row > .player-utility-slot:nth-child(#{$i}) {
+    animation-delay: $slotDelay + ($i + 2) * $slotStep;
+  }
+}
+
+@for $i from 1 through 3 {
+  .player-utility-column:first-child > .player-utility-slot:nth-child(#{$i}) {
+    animation-delay: $slotDelay + ($i - 1) * $slotStep;
+  }
+
+  .player-utility-column:last-child > .player-utility-slot:nth-child(#{$i}) {
+    animation-delay: $slotDelay + ($i + 3) * $slotStep;
+  }
+}
+
+.player-utility-figure {
+  animation: motion-fade 500ms ease-out 200ms backwards;
+}
+
+// shop and crafting cards follow one after another
+.card-list > * {
+  animation: motion-rise 380ms $easeOut backwards;
+}
+
+@for $i from 1 through 12 {
+  .card-list > :nth-child(#{$i}) {
+    animation-delay: $slotDelay + ($i - 1) * 40ms;
+  }
+}
+
+.shop-checkout {
+  animation: motion-rise 380ms $easeOut 260ms backwards;
+}
+
+.section-bar,
+.item-slot-durability {
+  animation: motion-reveal 700ms $easeOut 220ms backwards;
+}
+
+// ------------------------------------------------------------ reactions
+
+// items lift a little under the cursor
+.item-slot-image {
+  transition: transform 260ms $easeSpring;
+}
+
+.inventory-slot[data-filled='true']:hover .item-slot-image {
+  transform: scale(1.07);
+}
+
+// an item landing in a slot pops in (on open this hides behind the slot's own entrance)
+.inventory-slot .item-slot-image {
+  animation: motion-pop 240ms $easeSpring backwards;
+}
+
+body.inv-dragging .item-slot-image {
+  transition: none;
+}
+
+// a slot under a dragged item breathes in the drop colour
+.inventory-slot[data-over='true'] {
+  animation: motion-drop-pulse 700ms ease-in-out infinite alternate;
+}
+
+// cart lines slide in as they are added
+.shop-cart-line {
+  animation: motion-slide 260ms $easeOut backwards;
+}
+
+.shop-in-cart {
+  display: inline-block;
+  animation: motion-pop 260ms $easeSpring backwards;
+}
+
+// buttons give under the click; tactical keeps its skew
+.tab,
+.toolbar-button,
+.card-stepper button,
+.context-menu-item {
+  transition-property: background-color, color, box-shadow, filter, transform;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
+
+:root[data-uistyle='tactical'] {
+  .tab:active:not(:disabled),
+  .toolbar-button:active {
+    transform: skewX($skew) scale(0.95);
+  }
+}
+
+:root:not([data-uistyle='tactical']) {
+  .tab:active:not(:disabled),
+  .toolbar-button:active {
+    transform: scale(0.95);
+  }
+}
+
+.card-stepper button:active:not(:disabled) {
+  transform: scale(0.88);
+}
+
+.toolbar-button svg {
+  transition: transform 200ms $easeSpring;
+}
+
+.toolbar-button:hover svg {
+  transform: skewX(-$skew) scale(1.1);
+}
+
+:root:not([data-uistyle='tactical']) .toolbar-button:hover svg {
+  transform: scale(1.1);
+}
+
+.item-card-tile .item-slot-image {
+  transition: transform 260ms $easeSpring;
+}
+
+.item-card:hover .item-card-tile .item-slot-image {
+  transform: scale(1.07);
+}
+
+// ------------------------------------------------------------ reduced motion
+
+@media (prefers-reduced-motion: reduce) {
+  .inventory-backdrop,
+  .toolbar,
+  .inventory-column,
+  .key-hints,
+  .inventory-slot,
+  .item-slot-image,
+  .player-utility-slot,
+  .player-utility-figure,
+  .card-list > *,
+  .shop-checkout,
+  .shop-cart-line,
+  .shop-in-cart,
+  .section-bar,
+  .item-slot-durability {
+    animation: none !important;
+  }
+
+  .item-slot-image,
+  .tab,
+  .toolbar-button,
+  .toolbar-button svg {
+    transition: none !important;
+  }
+}

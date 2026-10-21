@@ -10,10 +10,14 @@ const Tooltip: React.FC = () => {
     middleware: [flip(), shift(), offset({ mainAxis: 10, crossAxis: 10 })],
     open: hoverData.open,
     placement: 'right-start',
+    // position with top/left so transform is free for the enter transition
+    transform: false,
   });
 
   const { isMounted, styles } = useTransitionStyles(context, {
-    duration: 200,
+    duration: { open: 180, close: 110 },
+    initial: { opacity: 0, transform: 'translateY(6px) scale(0.97)' },
+    common: { transformOrigin: 'top left', transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)' },
   });
 
   const handleMouseMove = ({ clientX, clientY }: MouseEvent | React.MouseEvent<unknown, MouseEvent>) => {
