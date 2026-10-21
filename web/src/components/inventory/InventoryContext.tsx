@@ -11,6 +11,8 @@ import { toggleFavourite } from '../../store/filters';
 import React from 'react';
 import { Menu, MenuItem } from '../utils/menu/Menu';
 import { InventoryType } from '../../typings';
+import { startInspect } from '../../store/inspect';
+import { playSound } from '../../utils/sound';
 
 interface DataProps {
   action: string;
@@ -47,6 +49,8 @@ const InventoryContext: React.FC = () => {
   const isBag = item ? isBackpackItem(item.name) : false;
   const showUse = inventoryType !== InventoryType.BACKPACK && !isBag;
   const canOpenBag = !!item && inventoryType === InventoryType.PLAYER && isBag && !isUtilitySlot(item.slot);
+  // the client films weapons from the player's own inventory (modules/weapon/inspect.lua)
+  const canInspect = !!item && inventoryType === InventoryType.PLAYER && item.name.toUpperCase().startsWith('WEAPON_');
 
   const handleClick = (data: DataProps) => {
     if (!item) return;
@@ -63,6 +67,10 @@ const InventoryContext: React.FC = () => {
         break;
       case 'openBackpack':
         fetchNui('openBagPanel', item.slot);
+        break;
+      case 'inspect':
+        playSound('toggle');
+        dispatch(startInspect(item.slot));
         break;
       case 'remove':
         fetchNui('removeComponent', { component: data?.component, slot: data?.slot });
@@ -119,6 +127,9 @@ const InventoryContext: React.FC = () => {
                 : Locale.ui_favourite || 'Favourite'
             }
           />
+        )}
+        {canInspect && (
+          <MenuItem onClick={() => handleClick({ action: 'inspect' })} label={Locale.ui_inspect || 'Inspect'} />
         )}
         {canOpenBag && (
           <MenuItem

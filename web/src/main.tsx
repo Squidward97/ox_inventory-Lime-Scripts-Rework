@@ -13,12 +13,18 @@ import '@fontsource/chakra-petch/700-italic.css';
 import '@fontsource/inter/400.css';
 import '@fontsource/inter/500.css';
 import '@fontsource/inter/600.css';
+import '@fontsource/roboto-condensed/400.css';
+import '@fontsource/roboto-condensed/500.css';
+import '@fontsource/roboto-condensed/700.css';
 import './index.scss';
 import './styles/glass.scss';
 import './styles/minimal.scss';
+import './styles/midnight.scss';
+import './styles/outline.scss';
 import './styles/motion.scss';
 import { ItemNotificationsProvider } from './components/utils/ItemNotifications';
 import { isEnvBrowser } from './utils/misc';
+import { applyUiStyle, previewUiStyle } from './utils/uistyle';
 
 const root = document.getElementById('root');
 
@@ -26,9 +32,8 @@ const root = document.getElementById('root');
 document.documentElement.dataset.uistyle = 'tactical';
 
 if (isEnvBrowser()) {
-  // ?uistyle=glass or ?uistyle=minimal previews the other themes outside the game
-  const uistyle = new URLSearchParams(window.location.search).get('uistyle');
-  if (uistyle) document.documentElement.dataset.uistyle = uistyle;
+  // the preview opens on its last picked theme (glass at first); ?uistyle= overrides it
+  applyUiStyle(previewUiStyle());
 
   // Mock game frame on its own layer, blurred like the in-game screenblur so the UI reads
   // as it will in FiveM. ?blur=0 shows it sharp. Night time img: https://i.imgur.com/iPTAdYV.png

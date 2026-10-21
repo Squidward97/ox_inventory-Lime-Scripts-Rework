@@ -164,12 +164,11 @@ $controlHover: rgb(255 255 255 / 0.1);
     background: $control;
   }
 
-  .card-action {
-    .item-card[data-craftable='true'] &,
-    .item-card[data-available='true'] & {
-      background: $accent;
-      color: $base;
-    }
+  // spelled out: a nested `.item-card &` here would put .item-card above :root and never match
+  .item-card[data-craftable='true'] .card-action,
+  .item-card[data-available='true'] .card-action {
+    background: $accent;
+    color: $base;
   }
 
   .shop-checkout {

@@ -194,16 +194,25 @@ The interface comes in two themes on the same layout:
 #          translucent rounded tiles with a glowing rarity dot
 # "minimal": flat and quiet: solid charcoal tiles, no glows, gradients or borders,
 #            rarity as one thin line; the cheapest theme to render
+# "midnight": deep navy panels round each column, a blue accent, slots that glow blue
+#             behind the item, glossy blue buttons
+# "outline": a light roleplay HUD over the open game: outlined square slots, small
+#            uppercase labels, a yellow accent, and its own layout (quick access stacked
+#            on the left, pockets over the backpack, equipment beside the body figure)
 setr inventory:uistyle "tactical"
 ```
 
-Glass and minimal share their structure (`web/src/styles/_upright.scss`) and add their
-own surfaces in `glass.scss` and `minimal.scss`. Glass slots are tuned with CSS
-variables at the top of `web/src/index.scss` (`--glass-fill`, `--glass-fill-filled`,
-`--glass-fill-hover`, `--glass-border`, `--glass-border-filled`, `--glass-radius`).
-Both themes share `--rarity-glow` and the accent colour `--accent` / `--drop` (RGB
-triplets). Rebuild the UI (`bun run build` in `web/`) after changing them. In the
-browser dev server, `?uistyle=glass` or `?uistyle=minimal` previews the other themes.
+The convar is only the default: players pick their own theme from the gear button at the
+end of the toolbar, and their choice is kept on their machine.
+
+Glass, minimal, midnight and outline share their structure (`web/src/styles/_upright.scss`) and add
+their own surfaces in `glass.scss`, `minimal.scss`, `midnight.scss` and `outline.scss`. Glass slots are
+tuned with CSS variables at the top of `web/src/index.scss` (`--glass-fill`,
+`--glass-fill-filled`, `--glass-fill-hover`, `--glass-border`, `--glass-border-filled`,
+`--glass-radius`). The themes share `--rarity-glow` and the accent colour `--accent` /
+`--drop` (RGB triplets; midnight and outline set their own). Rebuild the UI (`npm run build` in
+`web/`) after changing them. In the browser dev server, `?uistyle=` with a theme name
+previews it.
 
 The UI plays subtle tactical sounds (open and close, pick up and drop, use and give,
 cart and pay, refused moves, a faint tick when hovering items). They are synthesized in
@@ -212,6 +221,13 @@ the browser, so there are no sound files. Set the volume from 0 to 1; 0 turns th
 ```cfg
 setr inventory:uisound 0.5
 ```
+
+Right-click a weapon in your pockets and choose **Inspect** to look it over without leaving the
+inventory. The right column becomes an inspect panel: its window shows the weapon in the game
+world, filmed by a scripted camera (drag to rotate), with labels pinned on its attachment points.
+Below are its stats, ammo and serial, and one row per attachment slot the weapon takes, where
+compatible attachments from your pockets can be fitted or the fitted ones removed. Inspecting the
+weapon in your hands holsters it first. The client side is `modules/weapon/inspect.lua`.
 
 Items can set `category` (`food`, `weapons`, `clothing`, `tools`) for the toolbar
 filters and `rarity` (`uncommon`, `rare`, `epic`, `legendary`) for the slot tint.

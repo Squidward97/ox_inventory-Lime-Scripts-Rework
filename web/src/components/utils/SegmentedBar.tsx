@@ -14,8 +14,13 @@ const SegmentedBar: React.FC<Props> = ({ percent, segments = 30, tone = 'accent'
   const clamped = Math.max(0, Math.min(100, percent));
   const filled = clamped > 0 ? Math.max(1, Math.round((clamped / 100) * segments)) : 0;
 
+  // --fill lets a theme draw the fill as one piece instead of segments (glass does)
   return (
-    <div className={`segmented-bar${className ? ` ${className}` : ''}`} data-tone={tone}>
+    <div
+      className={`segmented-bar${className ? ` ${className}` : ''}`}
+      data-tone={tone}
+      style={{ '--fill': clamped } as React.CSSProperties}
+    >
       {Array.from({ length: segments }, (_, index) => (
         <span key={index} className={index < filled ? 'segment segment-filled' : 'segment'} />
       ))}

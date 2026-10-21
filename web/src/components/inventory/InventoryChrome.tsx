@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { selectRightInventory } from '../../store/inventory';
 import { InventoryType } from '../../typings';
@@ -10,11 +10,109 @@ import {
   PistolOutlineIcon,
   MouseGlyph,
   SearchIcon,
+  SettingsIcon,
   ShirtIcon,
   StarIcon,
   ToolIcon,
 } from '../utils/icons/TablerIcons';
 import { playSound } from '../../utils/sound';
+import { chooseUiStyle, getUiStyle, UiStyle } from '../../utils/uistyle';
+
+const THEMES: Array<{ id: UiStyle; label: () => string; description: () => string }> = [
+  {
+    id: 'tactical',
+    label: () => Locale.ui_theme_tactical || 'Tactical',
+    description: () => Locale.ui_theme_tactical_hint || 'Graphite HUD, sharp and angled',
+  },
+  {
+    id: 'glass',
+    label: () => Locale.ui_theme_glass || 'Glass',
+    description: () => Locale.ui_theme_glass_hint || 'Translucent, soft and rounded',
+  },
+  {
+    id: 'minimal',
+    label: () => Locale.ui_theme_minimal || 'Minimal',
+    description: () => Locale.ui_theme_minimal_hint || 'Flat and quiet, lightest to render',
+  },
+  {
+    id: 'midnight',
+    label: () => Locale.ui_theme_midnight || 'Midnight',
+    description: () => Locale.ui_theme_midnight_hint || 'Navy panels with a blue glow',
+  },
+  {
+    id: 'outline',
+    label: () => Locale.ui_theme_outline || 'Outline',
+    description: () => Locale.ui_theme_outline_hint || 'Thin outlines over the open game',
+  },
+];
+
+// The gear at the end of the toolbar: a small popover to switch themes, applied straight away.
+const SettingsMenu: React.FC = () => {
+  const [open, setOpen] = useState(false);
+  const [theme, setTheme] = useState<UiStyle>(getUiStyle);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // close on any click outside the popover
+  useEffect(() => {
+    if (!open) return;
+
+    const onPointerDown = (event: MouseEvent) => {
+      if (!ref.current?.contains(event.target as Node)) setOpen(false);
+    };
+
+    document.addEventListener('mousedown', onPointerDown);
+    return () => document.removeEventListener('mousedown', onPointerDown);
+  }, [open]);
+
+  const toggle = () => {
+    playSound('toggle');
+    setTheme(getUiStyle());
+    setOpen((previous) => !previous);
+  };
+
+  const pick = (id: UiStyle) => {
+    if (id === theme) return;
+
+    playSound('toggle');
+    chooseUiStyle(id);
+    setTheme(id);
+  };
+
+  return (
+    <div className="toolbar-settings" ref={ref}>
+      <button
+        className="toolbar-button"
+        data-active={open}
+        title={Locale.ui_settings || 'Settings'}
+        onClick={toggle}
+      >
+        <SettingsIcon />
+      </button>
+      {open && (
+        <div className="settings-popover">
+          <span className="field-label">{Locale.ui_theme || 'Theme'}</span>
+          <div className="settings-themes">
+            {THEMES.map((entry) => (
+              <button
+                key={entry.id}
+                className="settings-theme"
+                data-theme={entry.id}
+                data-active={theme === entry.id}
+                onClick={() => pick(entry.id)}
+              >
+                <span className="settings-theme-swatch" />
+                <span className="settings-theme-text">
+                  <span className="settings-theme-name">{entry.label()}</span>
+                  <span className="settings-theme-hint">{entry.description()}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const CATEGORIES: Array<{ id: ItemCategory; icon: React.ReactNode; label: () => string }> = [
   { id: 'all', icon: <GridIcon />, label: () => Locale.ui_filter_all || 'All items' },
@@ -140,6 +238,7 @@ export const InventoryToolbar: React.FC = () => {
           </button>
         ))}
       </div>
+      <SettingsMenu />
     </div>
   );
 };

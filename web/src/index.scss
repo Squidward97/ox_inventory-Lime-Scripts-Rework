@@ -495,6 +495,121 @@ input[type='number']::-webkit-outer-spin-button {
   margin-left: r(4);
 }
 
+// settings: the gear at the end of the toolbar and its theme popover
+.toolbar-settings {
+  position: relative;
+  margin-left: r(8);
+}
+
+.settings-popover {
+  position: absolute;
+  top: calc(100% + #{r(8)});
+  left: 0;
+  z-index: 20;
+  box-sizing: border-box;
+  width: r(270);
+  display: flex;
+  flex-direction: column;
+  gap: r(10);
+  padding: r(12);
+  border-radius: r(6);
+  background: rgb(var(--surface) / 0.97);
+  box-shadow:
+    inset 0 0 0 1px rgb(var(--light) / 0.1),
+    0 r(16) r(40) rgb(0 0 0 / 0.5);
+  animation: motion-drop 180ms ease-out backwards;
+}
+
+.settings-themes {
+  display: flex;
+  flex-direction: column;
+  gap: r(4);
+}
+
+.settings-theme {
+  display: flex;
+  align-items: center;
+  gap: r(12);
+  padding: r(8) r(10);
+  border: none;
+  border-radius: r(4);
+  background: transparent;
+  color: $zinc300;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease-out,
+    box-shadow 120ms ease-out;
+
+  &:hover {
+    background: rgb(var(--light) / 0.06);
+  }
+
+  &[data-active='true'] {
+    background: rgb(var(--light) / 0.08);
+    box-shadow: inset 0 0 0 1px rgb(var(--accent) / 0.55);
+  }
+}
+
+// each swatch is a tiny sample of its theme's slots
+.settings-theme-swatch {
+  flex-shrink: 0;
+  width: r(34);
+  height: r(26);
+
+  .settings-theme[data-theme='tactical'] & {
+    border-radius: 2px;
+    background: linear-gradient(135deg, transparent 68%, $accent 68% 78%, transparent 78%), #17191d;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.14);
+  }
+
+  .settings-theme[data-theme='glass'] & {
+    border-radius: r(8);
+    background:
+      linear-gradient(155deg, rgb(255 255 255 / 0.3), rgb(255 255 255 / 0.06)),
+      rgb(70 92 135 / 0.6);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.32);
+  }
+
+  .settings-theme[data-theme='minimal'] & {
+    border-radius: r(4);
+    background: rgb(41 43 48);
+    box-shadow: inset 0 -2px 0 $zinc400;
+  }
+
+  .settings-theme[data-theme='outline'] & {
+    background: rgb(20 48 52 / 0.6);
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.45);
+  }
+
+  .settings-theme[data-theme='midnight'] & {
+    border-radius: r(7);
+    background:
+      radial-gradient(ellipse 80% 70% at 50% 40%, rgb(60 115 230 / 0.75), transparent 75%),
+      rgb(14 21 37);
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12);
+  }
+}
+
+.settings-theme-text {
+  display: flex;
+  flex-direction: column;
+  gap: r(3);
+  min-width: 0;
+}
+
+.settings-theme-name {
+  font-size: r(13);
+  font-weight: 700;
+  color: $white;
+}
+
+.settings-theme-hint {
+  font-size: r(11);
+  color: $zinc500;
+}
+
 .key-hints {
   position: absolute;
   left: r(50);
@@ -1263,44 +1378,9 @@ $slotEdges: inset 0 1px 0 var(--edge-top), inset 0 0 0 1px var(--edge);
   flex: 1;
 }
 
-// tactical: the body stands in a holographic scanner bed. ::before is the scan field (lime
-// scanlines faded to an oval, plus the band that sweeps down once on open, see motion.scss);
-// ::after is a soft light pool behind the torso and a pad under the feet.
-:root[data-uistyle='tactical'] .player-utility-figure {
-  &::before,
-  &::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-  }
-
-  &::before {
-    // sizes kept out of the shorthand: Sass would read its `/` as division
-    background-image:
-      linear-gradient(transparent, rgb(var(--accent) / 0.16) 85%, rgb(var(--accent) / 0.4) 100%),
-      repeating-linear-gradient(to bottom, rgb(var(--accent) / 0.08) 0 1px, transparent 1px 3px);
-    background-position:
-      0 r(-60),
-      0 0;
-    background-size:
-      100% r(60),
-      auto;
-    background-repeat: no-repeat, repeat;
-    -webkit-mask-image: radial-gradient(ellipse 40% 48% at 50% 47%, #000 35%, transparent 75%);
-    mask-image: radial-gradient(ellipse 40% 48% at 50% 47%, #000 35%, transparent 75%);
-  }
-
-  &::after {
-    background:
-      radial-gradient(ellipse 22% 3.5% at 50% 96%, rgb(var(--accent) / 0.14), transparent 70%),
-      radial-gradient(ellipse 30% 5% at 50% 96%, transparent 72%, rgb(var(--accent) / 0.3) 76%, transparent 81%),
-      radial-gradient(ellipse 42% 46% at 50% 42%, rgb(var(--light) / 0.07), transparent 70%);
-  }
-
-  .body-svg-wrapper {
-    z-index: 1;
-  }
+// tactical: the body outline stands plain, without the soft glow below (it renders oddly in game)
+:root[data-uistyle='tactical'] .body-svg-wrapper svg {
+  filter: none;
 }
 
 .player-utility-quick {
@@ -1953,6 +2033,338 @@ $slotEdges: inset 0 1px 0 var(--edge-top), inset 0 0 0 1px var(--edge);
       color: $zinc600;
     }
   }
+}
+
+// ---------------------------------------------------------------- weapon inspection
+
+// While a weapon is inspected the backdrop gets a hole where the inspect window is (a clip-path set
+// from the window's measured rect in index.tsx), so the game, where the weapon is filmed, shows
+// through only there and every theme keeps its own backdrop round it. Not a mask: FiveM's browser
+// doesn't apply masks reliably, while clip-path renders fine.
+
+// the window must stay a plain rectangle to match the camera, so the right column stops tilting
+:root[data-uistyle='tactical'] .inventory-wrapper[data-inspecting='true'] .inventory-column-right {
+  transform: none;
+}
+
+// the frame round the hole
+.inspect-window {
+  position: absolute;
+  pointer-events: none;
+  outline: 1px solid rgb(var(--light) / 0.12);
+
+  // lime corner brackets top-left and bottom-right
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    width: r(16);
+    height: r(16);
+  }
+
+  &::before {
+    top: -1px;
+    left: -1px;
+    border-top: 2px solid $accent;
+    border-left: 2px solid $accent;
+  }
+
+  &::after {
+    right: -1px;
+    bottom: -1px;
+    border-right: 2px solid $accent;
+    border-bottom: 2px solid $accent;
+  }
+}
+
+.inspect-panel {
+  flex: 1;
+  min-height: 0;
+}
+
+.inspect-close {
+  padding: r(6) r(14);
+  font-size: r(11);
+}
+
+.inspect-viewport {
+  position: relative;
+  flex-shrink: 0;
+  height: rows(4);
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.inspect-viewport-hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: r(10);
+  text-align: center;
+  font-size: r(10);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: $zinc500;
+  pointer-events: none;
+}
+
+.inspect-loading {
+  padding: r(10) 0;
+}
+
+.inspect-details {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: r(14);
+}
+
+.inspect-stats {
+  display: grid;
+  gap: r(7);
+}
+
+.inspect-stat {
+  display: grid;
+  grid-template-columns: r(92) 1fr r(22);
+  align-items: center;
+  gap: r(10);
+
+  .inspect-stat-bar {
+    height: r(5);
+  }
+
+  .inspect-stat-value {
+    font-family: $mono;
+    font-size: r(11);
+    color: $zinc200;
+    text-align: right;
+  }
+}
+
+.inspect-meta {
+  display: flex;
+  gap: r(22);
+
+  > span {
+    display: flex;
+    flex-direction: column;
+    gap: r(5);
+  }
+
+  .mono {
+    font-size: r(12);
+    color: $zinc200;
+  }
+}
+
+.inspect-attachments {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: r(6);
+}
+
+.inspect-attachment {
+  padding: r(8) r(10);
+  border-radius: r(2.5);
+  background: rgb(var(--light) / 0.03);
+  box-shadow: inset 0 0 0 1px rgb(var(--light) / 0.06);
+  transition: box-shadow 120ms ease-out;
+
+  &[data-active='true'] {
+    box-shadow: inset 0 0 0 1px rgb(var(--accent) / 0.5);
+  }
+}
+
+.inspect-attachment-head {
+  display: flex;
+  align-items: center;
+  gap: r(10);
+
+  .field-label {
+    flex-shrink: 0;
+    width: r(92);
+  }
+}
+
+.inspect-attachment-name {
+  flex: 1;
+  min-width: 0;
+  font-size: r(12);
+  color: $white;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.inspect-remove {
+  padding: 0;
+  background: none;
+  border: none;
+  color: $zinc500;
+  font-size: r(10);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  cursor: pointer;
+
+  &:hover {
+    color: $red400;
+  }
+}
+
+.inspect-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: r(5);
+  margin-top: r(7);
+  padding-left: r(102);
+}
+
+.inspect-option {
+  display: inline-flex;
+  align-items: center;
+  gap: r(6);
+  padding: r(3) r(9) r(3) r(4);
+  border: none;
+  border-radius: r(2.5);
+  background: rgb(var(--light) / 0.05);
+  box-shadow: inset 0 0 0 1px rgb(var(--light) / 0.08);
+  color: $zinc200;
+  font-size: r(11);
+  cursor: pointer;
+  transition:
+    box-shadow 120ms ease-out,
+    color 120ms ease-out;
+
+  img {
+    width: r(20);
+    height: r(20);
+    object-fit: contain;
+  }
+
+  &:hover {
+    color: $white;
+    box-shadow: inset 0 0 0 1px rgb(var(--accent) / 0.6);
+  }
+}
+
+// pins sit in screen space over the window: a dot on the attachment point, a leader line, and
+// a label above it (below it for points in the lower half)
+.inspect-pins {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+
+// --lift (set per pin) is how many levels its label steps out to clear the labels nearer the middle
+.inspect-pin {
+  --reach: calc(#{r(28)} + var(--lift, 0) * #{r(46)});
+  position: absolute;
+  width: 0;
+  height: 0;
+  animation: motion-fade 200ms ease-out backwards;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: -0.5px;
+    width: 1px;
+    height: var(--reach);
+    background: rgb(var(--light) / 0.45);
+  }
+
+  &[data-side='up']::before {
+    bottom: r(5);
+  }
+
+  &[data-side='down']::before {
+    top: r(5);
+  }
+}
+
+.inspect-pin-dot {
+  position: absolute;
+  left: r(-5);
+  top: r(-5);
+  box-sizing: border-box;
+  width: r(10);
+  height: r(10);
+  border: 2px solid rgb(var(--light) / 0.8);
+  border-radius: 50%;
+  background: rgb(var(--ink) / 0.6);
+  box-shadow: 0 0 r(8) rgb(0 0 0 / 0.6);
+  pointer-events: auto;
+
+  .inspect-pin[data-filled='true'] & {
+    border-color: $accent;
+  }
+}
+
+.inspect-pin-label {
+  position: absolute;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: r(3);
+  padding: r(5) r(10);
+  white-space: nowrap;
+  border-radius: r(2.5);
+  background: rgb(var(--surface) / 0.92);
+  box-shadow:
+    inset 0 0 0 1px rgb(var(--light) / 0.12),
+    inset 2px 0 0 rgb(var(--light) / 0.3);
+  pointer-events: auto;
+  transition: box-shadow 120ms ease-out;
+
+  .inspect-pin[data-side='up'] & {
+    bottom: calc(var(--reach) + #{r(4)});
+  }
+
+  .inspect-pin[data-side='down'] & {
+    top: calc(var(--reach) + #{r(4)});
+  }
+
+  .inspect-pin[data-align='left'] & {
+    left: auto;
+    right: 0;
+  }
+
+  .inspect-pin[data-filled='true'] & {
+    box-shadow:
+      inset 0 0 0 1px rgb(var(--light) / 0.12),
+      inset 2px 0 0 $accent;
+  }
+
+  .inspect-pin[data-active='true'] & {
+    box-shadow:
+      inset 0 0 0 1px rgb(var(--accent) / 0.7),
+      inset 2px 0 0 $accent;
+  }
+}
+
+.inspect-pin-slot {
+  font-size: r(9.5);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: $zinc400;
+}
+
+.inspect-pin-item {
+  font-size: r(12);
+  font-weight: 600;
+  color: $white;
 }
 
 // ---------------------------------------------------------------- tooltip

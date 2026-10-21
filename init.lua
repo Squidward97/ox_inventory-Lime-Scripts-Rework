@@ -96,7 +96,7 @@ else
         player = lib.player:new(-1),
         autoreload = GetConvarBool('inventory:autoreload', false),
         screenblur = GetConvarBool('inventory:screenblur', true),
-        -- NUI slot style: 'tactical' (UI_STYLE.md clipped-corner tiles) or 'glass' (translucent tiles)
+        -- default NUI theme: 'tactical', 'glass', 'minimal', 'midnight' or 'outline'; players can switch from the UI settings
         uistyle = GetConvar('inventory:uistyle', 'tactical'),
         -- NUI sound volume, 0 to 1 (0 turns the UI sounds off)
         uisound = tonumber(GetConvar('inventory:uisound', '0.5')) or 0.5,

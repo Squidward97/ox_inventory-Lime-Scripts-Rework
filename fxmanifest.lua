@@ -39,9 +39,12 @@ files {
     'web/build/index.html',
     'web/build/assets/*.js',
     'web/build/assets/*.css',
+    'web/build/assets/*.woff2',
+    'web/build/assets/*.woff',
     'web/images/*.png',
     'modules/**/shared.lua',
     'modules/**/client.lua',
+    'modules/weapon/inspect.lua',
     'modules/bridge/**/client.lua',
     'data/*.lua',
 }

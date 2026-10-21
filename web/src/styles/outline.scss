@@ -1,0 +1,654 @@
+@use 'tokens' as *;
+@use 'upright' as *;
+
+// inventory:uistyle "outline": a light roleplay HUD over the open game, measured off a reference
+// screen. A teal tint over the game, outlined square slots on a clear fill six to a row with wide
+// gaps, the count sitting on a slot's top border and a short rarity bar just under its bottom-left
+// corner, Roboto Condensed labels in light grey, a yellow accent. The layout is one page grid:
+// quick access stacked on the left with its number boxes beside each slot, pockets over the
+// backpack, the secondary inventory, then equipment four slots wide beside a tall body figure.
+// Built on the shared upright structure (see _upright.scss).
+
+$condensed: 'Roboto Condensed', 'Arial Narrow', sans-serif;
+$cols: 6;
+$gutter: r(18);
+$line: rgb(255 255 255 / 0.2);
+$lineStrong: rgb(255 255 255 / 0.42);
+$label: rgb(170 180 179);
+$labelDim: rgb(105 128 129);
+$float: rgb(8 22 24 / 0.95);
+
+// width of a grid of $cols slots, and height of $n rows, at this theme's gutter
+$width: calc(#{$cols} * var(--slot-w) + #{$cols - 1} * #{$gutter});
+// the secondary inventory is a slot narrower so all four areas fit across the screen
+$widthNarrow: calc(#{$cols - 1} * var(--slot-w) + #{$cols - 2} * #{$gutter});
+
+@function tall($n) {
+  @return calc(#{$n} * var(--slot-h) + #{$n - 1} * #{$gutter});
+}
+
+:root[data-uistyle='outline'] {
+  --accent: 246 214 92;
+  --drop: 246 214 92;
+  --slot-w: #{r(74)};
+  --slot-h: #{r(74)};
+  --section-gap: #{r(30)};
+
+  @include upright($radius: r(2), $radiusCard: r(2), $radiusControl: r(2));
+
+  body {
+    font-family: $condensed;
+    letter-spacing: 0.01em;
+  }
+
+  button,
+  input,
+  .field {
+    font-family: $condensed;
+  }
+
+  // The game stays in view under a dark teal-black, with a strong teal glow spilling down from the
+  // middle of the top edge. The vignette is a gradient under the glow (an inset shadow would paint
+  // over it and dim it).
+  .inventory-backdrop {
+    background:
+      radial-gradient(ellipse 62% 66% at 50% -6%, rgb(55 118 115 / 0.75), rgb(40 100 98 / 0.32) 45%, transparent 80%),
+      radial-gradient(ellipse 85% 80% at 50% 40%, transparent 55%, rgb(1 4 5 / 0.55) 100%),
+      linear-gradient(180deg, rgb(5 16 18 / 0.76) 0%, rgb(3 10 12 / 0.82) 55%, rgb(2 6 7 / 0.9) 100%);
+    box-shadow: none;
+  }
+
+  // ------------------------------------------------------------ labels
+
+  // section heads shrink to a small grey label; no eyebrow, bar or rule
+  .eyebrow,
+  .section-bar,
+  .section-rule {
+    display: none;
+  }
+
+  .section-head {
+    height: auto;
+    gap: 0;
+  }
+
+  .section-header {
+    min-height: 0;
+
+    .section-title {
+      font-size: r(13);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: $label;
+    }
+
+    .section-weight,
+    .section-weight .unit {
+      font-size: r(12);
+      font-weight: 500;
+      color: $labelDim;
+    }
+
+    .section-weight .icon {
+      color: $labelDim;
+    }
+  }
+
+  .inventory-grid-wrapper,
+  .player-utility-wrapper {
+    gap: r(14);
+  }
+
+  .field-label,
+  .hint {
+    color: $labelDim;
+  }
+
+  // ------------------------------------------------------------ page grid
+
+  // The left and centre columns stop drawing boxes so their sections become cells of one grid;
+  // the right column (ground, stash, shop, inspect) stays a column of its own.
+  .inventory-columns {
+    top: r(120);
+    grid-template-columns: auto $width $widthNarrow auto;
+    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-areas:
+      'quick pockets secondary gear'
+      'quick backpack secondary gear'
+      'quick control secondary gear';
+    column-gap: r(44);
+    row-gap: r(34);
+    justify-content: center;
+    align-content: start;
+  }
+
+  .inventory-column-left,
+  .inventory-column-center {
+    display: contents;
+  }
+
+  .inventory-column > * {
+    width: $width;
+  }
+
+  .inventory-column-right {
+    grid-area: secondary;
+    padding-left: 0;
+    border-left: none;
+
+    > * {
+      width: $widthNarrow;
+    }
+
+    .inventory-grid-container {
+      grid-template-columns: repeat(#{$cols - 1}, var(--slot-w));
+    }
+  }
+
+  .inventory-column-center > .inventory-grid-wrapper {
+    grid-area: pockets;
+  }
+
+  .inventory-column-left > .inventory-grid-wrapper {
+    grid-area: backpack;
+  }
+
+  .inventory-control {
+    grid-area: control;
+    align-self: start;
+    margin-top: 0;
+  }
+
+  // six to a row with wide gutters; pockets 2 rows, backpack 4, secondary up to 7 (or stash 3
+  // over a backpack of 3), shop and crafting lists as tall as 7 rows
+  .inventory-grid-container {
+    grid-template-columns: repeat($cols, var(--slot-w));
+    gap: $gutter;
+    // room for the counts and rarity bars that sit on the slot borders
+    padding: r(8) 0 r(6);
+  }
+
+  .inventory-grid-wrapper[data-sizing='fixed'] .inventory-grid-container {
+    height: calc(var(--grid-rows) * var(--slot-h) + (var(--grid-rows) - 1) * #{$gutter});
+  }
+
+  .inventory-grid-wrapper[data-inventorytype='player'] .inventory-grid-container {
+    height: tall(2);
+  }
+
+  .inventory-grid-wrapper[data-inventorytype='backpack'] .inventory-grid-container,
+  .empty-state {
+    height: tall(4);
+  }
+
+  .inventory-column-right > .inventory-grid-wrapper[data-sizing='grow'] .inventory-grid-container {
+    max-height: tall(7);
+  }
+
+  .inventory-column-right > .inventory-grid-wrapper:first-child:not(:last-child) .inventory-grid-container,
+  .inventory-column-right > .inventory-grid-wrapper[data-inventorytype='rightbackpack'] .inventory-grid-container {
+    max-height: tall(3);
+  }
+
+  .crafting-wrapper .card-list,
+  .shop-body {
+    height: tall(7);
+  }
+
+  // ------------------------------------------------------------ quick access
+
+  // the slots stacked, each with its number box outside to the right, and "QUICK ACCESS" written
+  // vertically beside the stack
+  // sized to the stack (so the label centres on it), starting level with the pocket slots
+  .player-utility-quick {
+    grid-area: quick;
+    align-self: start;
+    position: relative;
+    width: auto;
+    padding: r(38) r(64) 0 0;
+
+    .section-head {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      right: 0;
+      width: r(18);
+      justify-content: center;
+    }
+
+    .section-header {
+      justify-content: center;
+    }
+
+    .section-header-right {
+      display: none;
+    }
+
+    .section-title {
+      writing-mode: vertical-rl;
+      font-size: r(11);
+      font-weight: 500;
+      letter-spacing: 0.2em;
+      color: $labelDim;
+      overflow: visible;
+    }
+  }
+
+  .player-utility-row {
+    flex-direction: column;
+    gap: $gutter;
+  }
+
+  // ------------------------------------------------------------ equipment
+
+  // four slots wide with a tall body figure on the right; no heading
+  .player-utility-wrapper {
+    grid-area: gear;
+    width: auto;
+    padding-top: r(8);
+
+    .section-head {
+      display: none;
+    }
+  }
+
+  .player-utility-body {
+    display: grid;
+    grid-template-columns: repeat(4, var(--slot-w)) r(200);
+    grid-template-rows: repeat(6, var(--slot-h));
+    gap: $gutter;
+    height: auto;
+  }
+
+  .player-utility-column {
+    display: contents;
+  }
+
+  .player-utility-figure {
+    grid-column: 5;
+    grid-row: 1 / -1;
+  }
+
+  // The body figure stands huge against the right edge of the screen, half of it past the edge,
+  // from under the toolbar to above the footer. Its lines keep a thin 1px stroke at any size.
+  .body-svg-wrapper {
+    position: fixed;
+    inset: auto;
+    top: r(70);
+    bottom: r(56);
+    // the figure is 106 by 225 units: as wide as that is tall, centred on the screen edge
+    width: calc((100vh - #{r(126)}) * 106 / 225);
+    right: calc((100vh - #{r(126)}) * -53 / 225);
+
+    path {
+      vector-effect: non-scaling-stroke;
+    }
+
+    // just a faint outline: no fill, about half the usual line strength (injuries stay at full
+    // strength, they carry information)
+    path:not(.body-svg-injured) {
+      fill: none;
+      stroke-opacity: 0.45;
+    }
+  }
+
+  .player-utility-placeholder {
+    gap: r(6);
+    color: $labelDim;
+
+    svg {
+      width: r(18);
+      height: r(18);
+    }
+
+    span {
+      font-size: r(10);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      color: $labelDim;
+    }
+  }
+
+  // ------------------------------------------------------------ toolbar
+
+  // centred, with hairlines running out to each side
+  .toolbar {
+    left: r(50);
+    right: r(52);
+    justify-content: center;
+    gap: r(6);
+
+    &::before,
+    &::after {
+      content: '';
+      flex: 0 1 r(280);
+      height: 1px;
+    }
+
+    &::before {
+      margin-right: r(18);
+      background: linear-gradient(90deg, transparent, $line);
+    }
+
+    &::after {
+      order: 9;
+      margin-left: r(18);
+      background: linear-gradient(90deg, $line, transparent);
+    }
+  }
+
+  .toolbar-search {
+    background: rgb(255 255 255 / 0.02);
+    box-shadow: inset 0 0 0 1px $line;
+
+    &:focus-within {
+      box-shadow: inset 0 0 0 1px rgb(var(--accent) / 0.7);
+    }
+  }
+
+  .toolbar-button {
+    background: rgb(255 255 255 / 0.02);
+    box-shadow: inset 0 0 0 1px $line;
+
+    &:hover {
+      box-shadow: inset 0 0 0 1px $lineStrong;
+    }
+
+    &[data-active='true'] {
+      color: rgb(var(--accent));
+      background: rgb(var(--accent) / 0.08);
+      box-shadow: inset 0 0 0 1px rgb(var(--accent) / 0.7);
+    }
+  }
+
+  // ------------------------------------------------------------ footer
+
+  .key-hints {
+    .key-hint-label {
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-size: r(11);
+      color: $label;
+    }
+
+    .key-hints-context {
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: $labelDim;
+    }
+  }
+
+  // ------------------------------------------------------------ controls
+
+  // keys as solid white rounded rectangles with dark text
+  .keycap {
+    border-radius: r(4);
+    color: rgb(12 16 17);
+    background: rgb(236 240 240);
+    box-shadow: none;
+    font-weight: 700;
+  }
+
+  .tab {
+    background: rgb(255 255 255 / 0.02);
+    box-shadow: inset 0 0 0 1px $line;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: r(12);
+    font-weight: 700;
+
+    &:hover {
+      box-shadow: inset 0 0 0 1px $lineStrong;
+    }
+  }
+
+  .tab-active,
+  .tab-active:hover {
+    color: $base;
+    background: $accent;
+    box-shadow: none;
+  }
+
+  .field {
+    background: rgb(255 255 255 / 0.02);
+    box-shadow: inset 0 0 0 1px $line;
+
+    &:focus {
+      box-shadow: inset 0 0 0 1px rgb(var(--accent) / 0.7);
+    }
+  }
+
+  .inventory-control .drop-action {
+    background: rgb(255 255 255 / 0.02);
+    box-shadow: inset 0 0 0 1px $line;
+
+    &[data-over='true'] {
+      color: $base;
+      background: $drop;
+      box-shadow: none;
+    }
+  }
+
+  body.inv-dragging .drop-action {
+    box-shadow: inset 0 0 0 1px rgb(var(--accent) / 0.6);
+  }
+
+  // ------------------------------------------------------------ slots
+
+  // A thin outline on an almost clear fill. --outline is the line colour, shared with the count's
+  // border segments below so they change together on hover and drop. Nothing is clipped: the count
+  // and the rarity bar sit on the borders.
+  .inventory-slot {
+    --outline: #{$line};
+    overflow: visible;
+    border: 1px solid var(--outline);
+    border-radius: 0;
+    background-color: rgb(0 0 0 / 0.06);
+
+    &[data-filled='true'] {
+      --outline: rgb(255 255 255 / 0.24);
+      background-color: rgb(255 255 255 / 0.025);
+      // the count draws the top edge, broken where the number sits (below)
+      border-top-color: transparent;
+    }
+
+    &[data-filled='true']:hover {
+      --outline: rgb(255 255 255 / 0.6);
+      background-color: rgb(255 255 255 / 0.06);
+    }
+
+    &[data-over='true'] {
+      --outline: #{$drop};
+      background-color: rgb(var(--drop) / 0.1);
+    }
+  }
+
+  // a filled slot with no count (unlimited shop stock) keeps its plain top border
+  .shop-card .inventory-slot[data-filled='true'] {
+    border-top-color: var(--outline);
+  }
+
+  // no tint over the tile; the bar on its border carries the rarity
+  .inventory-slot[data-filled='true'][data-rarity]:not([data-rarity='common']) {
+    background-image: none;
+    box-shadow: none;
+  }
+
+  // a short, saturated bar on the bottom border, near the left, centred on the line and glowing
+  // in its colour
+  .inventory-slot[data-filled='true']::after {
+    left: r(8);
+    bottom: calc(#{r(-1.5)} - 0.5px);
+    width: r(30);
+    height: r(3);
+    background: var(--rarity);
+    box-shadow:
+      0 0 r(4) rgb(var(--rarity-rgb) / 0.9),
+      0 0 r(10) rgb(var(--rarity-rgb) / 0.5);
+  }
+
+  .inventory-slot[data-filled='true'][data-rarity='common']::after {
+    display: none;
+  }
+
+  .item-slot-image {
+    inset: r(13) r(12) r(12);
+  }
+
+  // The count sits in a break in the top border, near the left: it spans the slot's top edge as a
+  // short line, the number, then a line to the far corner, centred on where the border would be.
+  .item-slot-count {
+    position: absolute;
+    top: calc(#{r(-6)} - 0.5px);
+    left: 0;
+    right: 0;
+    height: r(12);
+    display: flex;
+    align-items: center;
+    gap: r(4);
+    font-size: r(12);
+    font-weight: 700;
+    line-height: 1;
+    color: rgb(220 224 224);
+    text-shadow: 0 1px 2px rgb(0 0 0 / 0.9);
+
+    &::before,
+    &::after {
+      content: '';
+      height: 1px;
+      background: var(--outline);
+    }
+
+    &::before {
+      flex: 0 0 r(7);
+    }
+
+    &::after {
+      flex: 1;
+    }
+
+    .item-slot-count-x {
+      display: none;
+    }
+  }
+
+  // durability lives in the tooltip; the slot face stays clean like the reference
+  .item-slot-durability {
+    display: none;
+  }
+
+  // hotkey number in a small outlined box outside the slot, to its right (in the quick access stack
+  // only: on the hotbar the slots sit side by side)
+  .player-utility-quick .slot-badge {
+    top: auto;
+    left: auto;
+    right: r(-30);
+    bottom: 0;
+    min-width: r(18);
+    height: r(18);
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: r(11);
+    font-weight: 700;
+    color: $label;
+    box-shadow: inset 0 0 0 1px $lineStrong;
+  }
+
+  .player-utility-quick .inventory-slot[data-filled='true'] .slot-badge {
+    color: $label;
+    text-shadow: none;
+  }
+
+  .empty-state {
+    border: 1px dashed $line;
+    border-radius: 0;
+
+    .empty-state-title {
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: $label;
+    }
+  }
+
+  // ------------------------------------------------------------ cards (crafting, shop)
+
+  .item-card {
+    border: 1px solid $line;
+    border-radius: 0;
+    background: rgb(255 255 255 / 0.02);
+
+    &:hover {
+      border-color: $lineStrong;
+      background: rgb(255 255 255 / 0.04);
+    }
+  }
+
+  .item-card-name {
+    font-family: $condensed;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .card-stepper {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px $line;
+  }
+
+  .item-card[data-craftable='true'] .card-action,
+  .item-card[data-available='true'] .card-action {
+    color: $base;
+    background: $accent;
+    box-shadow: none;
+  }
+
+  .shop-checkout {
+    border: 1px solid $line;
+    border-radius: 0;
+    background: rgb(6 18 20 / 0.55);
+    box-shadow: none;
+  }
+
+  .shop-methods .tab[data-active='true'] {
+    color: rgb(var(--accent));
+    background: rgb(var(--accent) / 0.08);
+    box-shadow: inset 0 0 0 1px rgb(var(--accent) / 0.7);
+  }
+
+  .shop-pay[data-ready='true'] {
+    color: $base;
+    background: $accent;
+  }
+
+  // ------------------------------------------------------------ tooltip and menus
+
+  .tooltip-wrapper,
+  .context-menu-list,
+  .body-svg-tooltip,
+  .settings-popover {
+    border-radius: 0;
+    background: $float;
+    box-shadow:
+      inset 0 0 0 1px $lineStrong,
+      0 r(16) r(40) rgb(0 0 0 / 0.45);
+  }
+
+  .tooltip-wrapper:not([data-rarity='common']) {
+    background: $float;
+    box-shadow:
+      inset 0 0 0 1px $lineStrong,
+      inset 0 2px 0 var(--rarity),
+      0 r(16) r(40) rgb(0 0 0 / 0.45);
+  }
+
+  .tooltip-name,
+  .drawer-title {
+    font-family: $condensed;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+}

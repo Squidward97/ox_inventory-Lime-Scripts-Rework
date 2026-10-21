@@ -365,6 +365,7 @@ end)
 
 local Animations = lib.load('data.animations')
 local Items = require 'modules.items.client'
+local WeaponInspect = require 'modules.weapon.inspect'
 local usingItem = false
 
 local utilityClothingSlots = {}
@@ -924,6 +925,8 @@ function client.closeInventory()
 
 	if invOpen then
 		invOpen = nil
+		-- the blur is cleared just below anyway
+		WeaponInspect.close(true)
 		SetNuiFocus(false, false)
 		SetNuiFocusKeepInput(false)
 		Utils.blurOut()
@@ -1419,7 +1422,8 @@ RegisterNetEvent('ox_inventory:setPlayerInventory', function(currentDrops, inven
 				maxWeight = shared.playerweight,
 			},
 			imagepath = client.imagepath,
-			uistyle = client.uistyle,
+			-- the player's own pick from the UI settings, else the server default
+			uistyle = GetResourceKvpString('uistyle') or client.uistyle,
 			uisound = client.uisound
 		}
 	})
@@ -1704,6 +1708,17 @@ RegisterNetEvent('ox_inventory:viewInventory', function(left, right)
 	})
 end)
 
+local uiStyles = { tactical = true, glass = true, minimal = true, midnight = true, outline = true }
+
+-- theme picked in the UI settings, kept per player
+RegisterNUICallback('setUiStyle', function(style, cb)
+	if uiStyles[style] then
+		SetResourceKvp('uistyle', style)
+	end
+
+	cb(1)
+end)
+
 RegisterNUICallback('uiLoaded', function(_, cb)
 	client.uiLoaded = true
 	cb(1)
@@ -1711,6 +1726,13 @@ end)
 
 RegisterNUICallback('getItemData', function(itemName, cb)
 	cb(Items[itemName])
+end)
+
+-- weapon inspection (modules/weapon/inspect.lua); registered here because it needs the weapon in hand
+RegisterNUICallback('inspectWeapon', function(data, cb)
+	if type(data?.slot) ~= 'number' then return cb(false) end
+
+	cb(WeaponInspect.open(data.slot, data.rect, currentWeapon?.slot) or false)
 end)
 
 RegisterNUICallback('removeComponent', function(data, cb)
