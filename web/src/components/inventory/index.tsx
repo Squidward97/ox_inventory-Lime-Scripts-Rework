@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import useNuiEvent from '../../hooks/useNuiEvent';
 import InventoryControl from './InventoryControl';
 import InventoryHotbar from './InventoryHotbar';
@@ -17,10 +17,19 @@ import InventoryContext from './InventoryContext';
 import { closeContextMenu } from '../../store/contextMenu';
 import Fade from '../utils/transitions/Fade';
 import { InventoryKeyHints, InventoryToolbar } from './InventoryChrome';
+import { playSound } from '../../utils/sound';
 
 const Inventory: React.FC = () => {
   const [inventoryVisible, setInventoryVisible] = useState(false);
   const dispatch = useAppDispatch();
+
+  // open and close sounds; the first render (closed) stays silent
+  const wasVisible = useRef(inventoryVisible);
+  useEffect(() => {
+    if (wasVisible.current === inventoryVisible) return;
+    wasVisible.current = inventoryVisible;
+    playSound(inventoryVisible ? 'open' : 'close');
+  }, [inventoryVisible]);
 
   useNuiEvent<boolean>('setInventoryVisible', setInventoryVisible);
   useNuiEvent<false>('closeInventory', () => {

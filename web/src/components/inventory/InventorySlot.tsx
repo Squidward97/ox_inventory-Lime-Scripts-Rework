@@ -25,6 +25,7 @@ import { ItemsPayload } from '../../reducers/refreshSlots';
 import { closeTooltip, openTooltip } from '../../store/tooltip';
 import { openContextMenu } from '../../store/contextMenu';
 import { useMergeRefs } from '@floating-ui/react';
+import { playSound } from '../../utils/sound';
 
 interface SlotProps {
   inventoryId: Inventory['id'];
@@ -53,17 +54,24 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
       collect: (monitor) => ({
         isDragging: monitor.isDragging(),
       }),
-      item: () =>
-        isSlotWithItem(item, inventoryType !== InventoryType.SHOP)
-          ? {
-              inventory: inventoryType,
-              item: {
-                name: item.name,
-                slot: item.slot,
-              },
-              image: item?.name && `url(${getItemUrl(item) || 'none'}`,
-            }
-          : null,
+      item: () => {
+        if (!isSlotWithItem(item, inventoryType !== InventoryType.SHOP)) return null;
+
+        playSound('pickup');
+
+        return {
+          inventory: inventoryType,
+          item: {
+            name: item.name,
+            slot: item.slot,
+          },
+          image: item?.name && `url(${getItemUrl(item) || 'none'}`,
+        };
+      },
+      // let go anywhere that isn't a valid slot
+      end: (_, monitor) => {
+        if (!monitor.didDrop()) playSound('cancel');
+      },
       canDrag,
     }),
     [inventoryType, item]
@@ -77,6 +85,7 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
       }),
       drop: (source) => {
         dispatch(closeTooltip());
+        playSound('drop');
         switch (source.inventory) {
           case InventoryType.SHOP:
             onBuy(source, { inventory: inventoryType, item: { slot: item.slot } });
@@ -141,11 +150,13 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
     dispatch(closeTooltip());
     if (timerRef.current) clearTimeout(timerRef.current);
     if (event.ctrlKey && isSlotWithItem(item) && inventoryType !== 'shop' && inventoryType !== 'crafting') {
+      playSound('drop');
       onDrop({ item: item, inventory: inventoryType });
     } else if (event.altKey && isSlotWithItem(item)) {
       if (inventoryType === 'player') {
         onUse(item);
       } else if (inventoryType === InventoryType.BACKPACK || inventoryType === InventoryType.RIGHTBACKPACK) {
+        playSound('drop');
         onDrop({ item: item, inventory: inventoryType }, { inventory: InventoryType.PLAYER, item: { slot: 0 } });
       }
     }
@@ -183,6 +194,7 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
         <div
           className="item-slot-wrapper"
           onMouseEnter={() => {
+            playSound('hover');
             if (noTooltip) return;
             timerRef.current = window.setTimeout(() => {
               dispatch(openTooltip({ item, inventoryType }));

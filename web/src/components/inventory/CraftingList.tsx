@@ -16,6 +16,7 @@ import {
 import InventorySlot from './InventorySlot';
 import SectionHead from './SectionHead';
 import { ClockIcon, MinusIcon } from '../utils/icons/TablerIcons';
+import { playSound } from '../../utils/sound';
 
 interface Ingredient {
   name: string;
@@ -80,6 +81,7 @@ const RecipeCard: React.FC<{ recipe: SlotWithItem; inventory: Inventory }> = ({ 
       findAvailableSlot(recipe, data, pockets.items, InventoryType.PLAYER) ||
       pockets.items.find((slot) => !isUtilitySlot(slot.slot));
 
+    playSound('use');
     dispatch(
       craftItem({
         fromSlot: recipe.slot,

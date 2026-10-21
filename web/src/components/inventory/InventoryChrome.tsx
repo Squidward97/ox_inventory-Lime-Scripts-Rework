@@ -14,6 +14,7 @@ import {
   StarIcon,
   ToolIcon,
 } from '../utils/icons/TablerIcons';
+import { playSound } from '../../utils/sound';
 
 const CATEGORIES: Array<{ id: ItemCategory; icon: React.ReactNode; label: () => string }> = [
   { id: 'all', icon: <GridIcon />, label: () => Locale.ui_filter_all || 'All items' },
@@ -130,7 +131,10 @@ export const InventoryToolbar: React.FC = () => {
             className="toolbar-button"
             data-active={category === entry.id}
             title={entry.label()}
-            onClick={() => dispatch(setCategory(category === entry.id && entry.id !== 'all' ? 'all' : entry.id))}
+            onClick={() => {
+              playSound('toggle');
+              dispatch(setCategory(category === entry.id && entry.id !== 'all' ? 'all' : entry.id));
+            }}
           >
             {entry.icon}
           </button>

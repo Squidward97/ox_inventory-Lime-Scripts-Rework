@@ -1,5 +1,6 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { fetchNui } from '../utils/fetchNui';
+import { playSound } from '../utils/sound';
 
 export const buyItem = createAsyncThunk(
   'inventory/buyItem',
@@ -17,6 +18,7 @@ export const buyItem = createAsyncThunk(
       const response = await fetchNui<boolean>('buyItem', data);
 
       if (response === false) {
+        playSound('error');
         return rejectWithValue(response);
       }
     } catch (error) {

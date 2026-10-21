@@ -8,6 +8,7 @@ import { isEnvBrowser } from '../../utils/misc';
 import InventorySlot from './InventorySlot';
 import SectionHead from './SectionHead';
 import { MinusIcon } from '../utils/icons/TablerIcons';
+import { playSound } from '../../utils/sound';
 
 type Method = 'cash' | 'card';
 type Cart = Record<number, number>;
@@ -138,6 +139,7 @@ const ShopCard: React.FC<{
             className="tab card-action"
             disabled={!!blocker}
             onClick={() => {
+              playSound('add');
               onAdd(amount);
               setQuantity(1);
             }}
@@ -196,8 +198,11 @@ const Checkout: React.FC<{
     setPending(false);
 
     if (success || isEnvBrowser()) {
+      playSound('pay');
       setCart({});
       onPaid();
+    } else {
+      playSound('error');
     }
   };
 
@@ -254,14 +259,24 @@ const Checkout: React.FC<{
 
       <div className="shop-checkout-foot">
         <div className="shop-methods">
-          <button className="tab" data-active={payMethod === 'cash'} onClick={() => setMethod('cash')}>
+          <button
+            className="tab"
+            data-active={payMethod === 'cash'}
+            onClick={() => {
+              playSound('toggle');
+              setMethod('cash');
+            }}
+          >
             <span>{Locale.ui_cash || 'Cash'}</span>
           </button>
           <button
             className="tab"
             data-active={payMethod === 'card'}
             disabled={!cardAvailable}
-            onClick={() => setMethod('card')}
+            onClick={() => {
+              playSound('toggle');
+              setMethod('card');
+            }}
           >
             <span>{Locale.ui_card || 'Card'}</span>
           </button>

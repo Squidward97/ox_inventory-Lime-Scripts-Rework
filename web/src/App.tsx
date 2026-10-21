@@ -11,6 +11,7 @@ import DragPreview from './components/utils/DragPreview';
 import { fetchNui } from './utils/fetchNui';
 import { useDragDropManager } from 'react-dnd';
 import KeyPress from './components/utils/KeyPress';
+import { setSoundVolume } from './utils/sound';
 
 debugData<UtilitySlotConfig[]>([
   {
@@ -143,9 +144,11 @@ const App: React.FC = () => {
     leftInventory: Inventory;
     imagepath: string;
     uistyle?: string;
-  }>('init', ({ locale, items, leftInventory, imagepath, uistyle }) => {
+    uisound?: number;
+  }>('init', ({ locale, items, leftInventory, imagepath, uistyle, uisound }) => {
     for (const name in locale) Locale[name] = locale[name];
     if (uistyle) document.documentElement.dataset.uistyle = uistyle;
+    if (uisound !== undefined) setSoundVolume(uisound);
     for (const name in items) Items[name] = items[name];
 
     setImagePath(imagepath);

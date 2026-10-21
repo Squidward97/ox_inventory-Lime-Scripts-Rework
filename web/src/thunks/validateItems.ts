@@ -2,6 +2,7 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import { setContainerWeight } from '../store/inventory';
 import { InventoryType } from '../typings';
 import { fetchNui } from '../utils/fetchNui';
+import { playSound } from '../utils/sound';
 import type { RootState } from '../store';
 
 export const validateMove = createAsyncThunk(
@@ -19,7 +20,10 @@ export const validateMove = createAsyncThunk(
     try {
       const response = await fetchNui<boolean | number>('swapItems', data);
 
-      if (response === false) return rejectWithValue(response);
+      if (response === false) {
+        playSound('error');
+        return rejectWithValue(response);
+      }
 
       if (typeof response === 'number') {
         const state = getState() as RootState;

@@ -98,6 +98,8 @@ else
         screenblur = GetConvarBool('inventory:screenblur', true),
         -- NUI slot style: 'tactical' (UI_STYLE.md clipped-corner tiles) or 'glass' (translucent tiles)
         uistyle = GetConvar('inventory:uistyle', 'tactical'),
+        -- NUI sound volume, 0 to 1 (0 turns the UI sounds off)
+        uisound = tonumber(GetConvar('inventory:uisound', '0.5')) or 0.5,
         keys = json.decode(GetConvar('inventory:keys', '')) or { 'F2', 'K', 'TAB' },
         enablekeys = json.decode(GetConvar('inventory:enablekeys', '[249]')),
         aimedfiring = GetConvarBool('inventory:aimedfiring', false),

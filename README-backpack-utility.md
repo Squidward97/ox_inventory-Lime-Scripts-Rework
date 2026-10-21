@@ -188,7 +188,8 @@ The interface comes in two themes on the same layout:
 
 ```cfg
 # "tactical" (default): UI_STYLE.md look: Chakra Petch, italic headings, skewed controls,
-#                       tiles with clipped corners and a rarity stripe along the cut
+#                       graphite palette, smaller slots with more rows, a rarity corner
+#                       tag and sheen, side columns tilted toward the centre
 # "glass": Inter, upright headings, rounded controls and cards,
 #          translucent rounded tiles with a glowing rarity dot
 # "minimal": flat and quiet: solid charcoal tiles, no glows, gradients or borders,
@@ -203,6 +204,14 @@ variables at the top of `web/src/index.scss` (`--glass-fill`, `--glass-fill-fill
 Both themes share `--rarity-glow` and the accent colour `--accent` / `--drop` (RGB
 triplets). Rebuild the UI (`bun run build` in `web/`) after changing them. In the
 browser dev server, `?uistyle=glass` or `?uistyle=minimal` previews the other themes.
+
+The UI plays subtle tactical sounds (open and close, pick up and drop, use and give,
+cart and pay, refused moves, a faint tick when hovering items). They are synthesized in
+the browser, so there are no sound files. Set the volume from 0 to 1; 0 turns them off:
+
+```cfg
+setr inventory:uisound 0.5
+```
 
 Items can set `category` (`food`, `weapons`, `clothing`, `tools`) for the toolbar
 filters and `rarity` (`uncommon`, `rare`, `epic`, `legendary`) for the slot tint.
