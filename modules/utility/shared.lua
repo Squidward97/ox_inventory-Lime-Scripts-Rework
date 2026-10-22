@@ -96,6 +96,23 @@ end
 
 shared.playerslots += Utility.count
 
+---@param itemName string
+---@return boolean # whether the item is a vest: one the armour slot lists
+function Utility.IsVest(itemName)
+    local def = Utility.armourSlot and Utility.bySlot[Utility.armourSlot]
+
+    return def ~= nil and def.allowed ~= nil and def.allowed[itemName] == true
+end
+
+---The armour a vest holds: what's left of its plates. Vests show it as their durability.
+---@param metadata table
+---@return number
+function Utility.VestArmour(metadata)
+    local maxArmour = math.min((metadata.plates or 0) * (Utility.armour?.armourPerPlate or 0), 100)
+
+    return math.min(metadata.armour or maxArmour, maxArmour)
+end
+
 ---@param slot number
 ---@return boolean
 function Utility.IsUtilitySlot(slot)

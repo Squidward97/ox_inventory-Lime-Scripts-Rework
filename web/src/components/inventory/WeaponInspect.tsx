@@ -17,12 +17,19 @@ import { fetchNui } from '../../utils/fetchNui';
 import { isEnvBrowser } from '../../utils/misc';
 import { playSound } from '../../utils/sound';
 import useNuiEvent from '../../hooks/useNuiEvent';
-import { getItemUrl, padCount } from '../../helpers';
+import { formatWeight, getItemUrl, padCount } from '../../helpers';
 import SegmentedBar, { durabilityTone } from '../utils/SegmentedBar';
+import Markdown from '../utils/Markdown';
 import SectionHead from './SectionHead';
 
+const isWeaponName = (name: string) => name.toUpperCase().startsWith('WEAPON_');
+
 // The browser preview has no game to film: a made-up state, and pins spread over the window.
-const mockData = (slot: number, name: string, label: string, metadata: Record<string, any>): InspectData => ({
+const mockData = (slot: number, name: string, label: string, metadata: Record<string, any>): InspectData =>
+  isWeaponName(name) ? mockWeapon(slot, name, label, metadata) : { kind: 'item', slot, name, label, slots: [] };
+
+const mockWeapon = (slot: number, name: string, label: string, metadata: Record<string, any>): InspectData => ({
+  kind: 'weapon',
   slot,
   name,
   label,
@@ -89,13 +96,60 @@ const Stat: React.FC<{ label: string; value?: number; tone?: 'accent' | 'warning
   );
 };
 
+/** An inspected item's details, read live off its slot */
+const ItemDetails: React.FC<{ slot: number }> = ({ slot }) => {
+  const pockets = useAppSelector(selectLeftInventory);
+  const item = pockets.items[slot - 1];
+  if (!item?.name) return null;
+
+  const description = item.metadata?.description || Items[item.name]?.description;
+  const weight = item.weight ?? 0;
+
+  return (
+    <div className="inspect-details">
+      {item.durability !== undefined && (
+        <div className="inspect-stats">
+          <Stat
+            label={Locale.ui_durability || 'Durability'}
+            value={item.durability}
+            tone={durabilityTone(item.durability)}
+          />
+        </div>
+      )}
+
+      <div className="inspect-meta">
+        {weight > 0 && (
+          <span>
+            <span className="field-label">{Locale.ui_weight || 'Weight'}</span>
+            <span className="mono">{formatWeight(weight)}</span>
+          </span>
+        )}
+        {(item.count ?? 0) > 1 && (
+          <span>
+            <span className="field-label">{Locale.ui_amount || 'Amount'}</span>
+            <span className="mono">×{item.count}</span>
+          </span>
+        )}
+        {item.metadata?.serial && (
+          <span>
+            <span className="field-label">{Locale.ui_serial || 'Serial'}</span>
+            <span className="mono">{item.metadata.serial}</span>
+          </span>
+        )}
+      </div>
+
+      {description && <Markdown content={description} className="tooltip-description" />}
+    </div>
+  );
+};
+
 /** The inspect panel that replaces the right column */
 const WeaponInspect: React.FC = () => {
   const dispatch = useAppDispatch();
   const { slot, data, selected } = useAppSelector((state) => state.inspect);
   const pockets = useAppSelector(selectLeftInventory);
   const viewportRef = useRef<HTMLDivElement>(null);
-  const drag = useRef({ active: false, lastX: 0 });
+  const drag = useRef({ active: false, lastX: 0, lastY: 0 });
   const opened = useRef(false);
 
   const item = slot !== null ? pockets.items[slot - 1] : undefined;
@@ -125,6 +179,7 @@ const WeaponInspect: React.FC = () => {
       if (isEnvBrowser()) {
         if (!item?.name) return;
         dispatch(setInspectData(mockData(slot, item.name, Items[item.name]?.label || item.name, item.metadata || {})));
+        if (!isWeaponName(item.name)) return;
         dispatch(
           setInspectPins(
             Object.entries(MOCK_PIN_SPOTS).map(([id, [x, y]]) => ({
@@ -191,19 +246,39 @@ const WeaponInspect: React.FC = () => {
     } else playSound('error');
   };
 
+  // items turn every way and zoom; weapons only spin
+  const isItem = data?.kind === 'item';
+
+  // Scroll zooms an item. Bound by hand rather than onWheel: React's wheel listener is passive, and
+  // the panel round the window would scroll along with the zoom.
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport || !isItem) return;
+
+    const onWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      if (event.deltaY !== 0 && !isEnvBrowser()) fetchNui('inspectZoom', { steps: -Math.sign(event.deltaY) });
+    };
+
+    viewport.addEventListener('wheel', onWheel, { passive: false });
+    return () => viewport.removeEventListener('wheel', onWheel);
+  }, [isItem]);
+
   const onMouseDown = (event: React.MouseEvent) => {
     if (event.button !== 0) return;
-    drag.current = { active: true, lastX: event.clientX };
+    drag.current = { active: true, lastX: event.clientX, lastY: event.clientY };
   };
 
   const onMouseMove = (event: React.MouseEvent) => {
     if (!drag.current.active) return;
 
     const delta = event.clientX - drag.current.lastX;
-    if (Math.abs(delta) < 1) return;
+    const pitch = isItem ? event.clientY - drag.current.lastY : 0;
+    if (Math.abs(delta) < 1 && Math.abs(pitch) < 1) return;
 
     drag.current.lastX = event.clientX;
-    fetchNui('inspectRotate', { delta: delta * 0.4 });
+    drag.current.lastY = event.clientY;
+    fetchNui('inspectRotate', { delta: delta * 0.4, pitch: pitch * 0.4 });
   };
 
   const stopDrag = () => {
@@ -231,10 +306,16 @@ const WeaponInspect: React.FC = () => {
         onMouseUp={stopDrag}
         onMouseLeave={stopDrag}
       >
-        <span className="inspect-viewport-hint">{Locale.ui_inspect_rotate || 'Drag to rotate'}</span>
+        <span className="inspect-viewport-hint">
+          {isItem
+            ? Locale.ui_inspect_rotate_zoom || 'Drag to rotate · scroll to zoom'
+            : Locale.ui_inspect_rotate || 'Drag to rotate'}
+        </span>
       </div>
 
-      {data ? (
+      {data?.kind === 'item' ? (
+        <ItemDetails slot={data.slot} />
+      ) : data ? (
         <div className="inspect-details">
           <div className="inspect-stats">
             <Stat
@@ -314,7 +395,7 @@ const WeaponInspect: React.FC = () => {
           </ul>
         </div>
       ) : (
-        <p className="hint inspect-loading">{Locale.ui_inspect_loading || 'Preparing weapon…'}</p>
+        <p className="hint inspect-loading">{Locale.ui_inspect_loading || 'Preparing…'}</p>
       )}
     </div>
   );

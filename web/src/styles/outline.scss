@@ -646,9 +646,41 @@ $widthNarrow: calc(#{$cols - 1} * var(--slot-w) + #{$cols - 2} * #{$gutter});
   }
 
   .tooltip-name,
-  .drawer-title {
+  .drawer-title,
+  .context-menu-title {
     font-family: $condensed;
     font-weight: 700;
     text-transform: uppercase;
+  }
+
+  // the context menu's tiles and thumbnail as outlined squares, like the slots
+  .context-menu-list {
+    border-radius: 0;
+  }
+
+  .context-menu-thumb,
+  .context-menu-item.context-menu-tile {
+    border-radius: 0;
+    background-color: transparent;
+    box-shadow: inset 0 0 0 1px $line;
+  }
+
+  .context-menu-thumb {
+    background: var(--thumb) center / 78% no-repeat;
+  }
+
+  .context-menu-item.context-menu-tile {
+    color: $label;
+    font-family: $condensed;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+
+    &:hover,
+    &:focus {
+      color: $white;
+      background: rgb(var(--accent) / 0.1);
+      box-shadow: inset 0 0 0 1px $accent;
+    }
   }
 }

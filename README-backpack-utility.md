@@ -229,6 +229,29 @@ Below are its stats, ammo and serial, and one row per attachment slot the weapon
 compatible attachments from your pockets can be fitted or the fitted ones removed. Inspecting the
 weapon in your hands holsters it first. The client side is `modules/weapon/inspect.lua`.
 
+Any other item can be inspected the same way by giving it a `prop` in `data/items.lua`: it gets the
+Inspect entry too, and the window films that model, with the item's durability, weight, amount,
+serial and description below instead of weapon stats.
+
+```lua
+['burger'] = {
+    label = 'Burger',
+    prop = 'prop_cs_burger_01',
+    -- or, only for a model that needs adjusting:
+    -- prop = { model = 'prop_cs_burger_01', rotation = vec3(0.0, 0.0, 90.0), zoom = 1.2 },
+},
+```
+
+An inspected item turns every way (drag sideways to spin it, up and down to tip it, round its own
+centre) and zooms with the scroll wheel; weapons only spin. Zoom narrows the camera's field of view
+rather than moving it, so the backdrop follows it, and an item zoomed past the window is cut off at
+the window's edge.
+
+`rotation` (pitch, roll, yaw in degrees) and `zoom` (the zoom it opens at, 0.7–4) are optional. Without a
+rotation the model is turned so its broadest face meets the camera, and a flat one (a card, a note)
+is stood up; it's framed to fill the window like a weapon is. This top-level `prop` is separate from
+`client.prop`, the prop held in the hand while the item is being used.
+
 Items can set `category` (`food`, `weapons`, `clothing`, `tools`) for the toolbar
 filters and `rarity` (`uncommon`, `rare`, `epic`, `legendary`) for the slot tint.
 
@@ -326,6 +349,12 @@ the `buyItem` hook (with `paymentMethod` = `cash` / `card`), so existing hooks c
 - Because the damaged value is what persists, relogging restores the armour a
   player logged out with rather than a full set of plates. Up to 1s of damage
   can be lost to an abrupt disconnect, which favours the player slightly.
+- The vest shows its armour as its **durability** (`metadata.durability` mirrors
+  `metadata.armour`), so the slot's bar is the armour left. A vest without plates
+  sits at 0% and stays in the slot worn out until plates go back in; plates can
+  always be inserted, as the vest's buttons don't go through the durability check.
+  Any item listed in the armour slot's `items` counts as a vest. Vests saved
+  before this pick their durability up the next time their inventory loads.
 
 ### Safeguards
 - `backpack`/`rightbackpack` swap types are validated against the exploit guard:
@@ -351,6 +380,8 @@ the `buyItem` hook (with `paymentMethod` = `cash` / `card`), so existing hooks c
 | `clothing` | Per-role clothing config from `inventory:utilityclothing` |
 | `IsUtilitySlot(slot)` | Whether a slot number is a utility slot |
 | `CanHoldItem(slot, itemName, itemData?)` | Allow-list predicate (true for non-utility slots) |
+| `IsVest(itemName)` | Whether the armour slot lists the item |
+| `VestArmour(metadata)` | Armour a vest holds (its plates, capped at 100); also its durability |
 | `GetClientConfig()` | Layout payload for the NUI `setupUtility` action |
 
 ### `modules/utility/client.lua`

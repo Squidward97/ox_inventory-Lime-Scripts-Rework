@@ -3,6 +3,7 @@ if not lib then return end
 local Items = {}
 local ItemList = require 'modules.items.shared' --[[@as table<string, OxServerItem>]]
 local Utils = require 'modules.utils.server'
+local Utility = require 'modules.utility.shared'
 
 TriggerEvent('ox_inventory:itemList', ItemList)
 
@@ -230,6 +231,11 @@ function Items.Metadata(inv, item, metadata, count)
 		if not metadata.durability then
 			metadata = setItemDurability(ItemList[item.name], metadata)
 		end
+
+		-- a vest's durability is the armour its plates hold (modules/utility/server.lua)
+		if Utility.armour and Utility.IsVest(item.name) then
+			metadata.durability = Utility.VestArmour(metadata)
+		end
 	end
 
 	if count > 1 and not item.stack then
@@ -284,6 +290,11 @@ function Items.CheckMetadata(metadata, item, name, ostime)
 		end
 	else
 		metadata = setItemDurability(item, metadata)
+	end
+
+	-- vests saved before their durability followed their armour pick it up here
+	if Utility.armour and Utility.IsVest(name) then
+		metadata.durability = Utility.VestArmour(metadata)
 	end
 
 	if item.weapon then

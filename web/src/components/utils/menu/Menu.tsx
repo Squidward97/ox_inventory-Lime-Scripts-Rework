@@ -48,12 +48,14 @@ const MenuContext = React.createContext<{
 
 interface MenuProps {
   label?: string;
+  /** shown before the label of a submenu's row */
+  icon?: React.ReactNode;
   nested?: boolean;
   children?: React.ReactNode;
 }
 
 export const MenuComponent = React.forwardRef<HTMLButtonElement, MenuProps & React.HTMLProps<HTMLButtonElement>>(
-  ({ children, label, ...props }, forwardedRef) => {
+  ({ children, label, icon, ...props }, forwardedRef) => {
     const menu = useAppSelector((state) => state.contextMenu);
     const [isOpen, setIsOpen] = useState(false);
     const [hasFocusInside, setHasFocusInside] = useState(false);
@@ -202,10 +204,9 @@ export const MenuComponent = React.forwardRef<HTMLButtonElement, MenuProps & Rea
               })
             )}
           >
-            {label}
-            {isNested && (
-              <ChevronRightIcon className="context-menu-chevron" />
-            )}
+            <span className="context-menu-icon">{icon}</span>
+            <span className="context-menu-label">{label}</span>
+            <ChevronRightIcon className="context-menu-chevron" />
           </button>
         )}
         <MenuContext.Provider
@@ -244,12 +245,19 @@ export const MenuComponent = React.forwardRef<HTMLButtonElement, MenuProps & Rea
 interface MenuItemProps {
   label: string;
   disabled?: boolean;
+  icon?: React.ReactNode;
+  /** tile: a square button in the quick row; row (default): a line in the list */
+  variant?: 'tile' | 'row';
+  /** danger tints it as the destructive choice */
+  tone?: 'danger';
+  /** on: a toggle that's currently set */
+  on?: boolean;
 }
 
 export const MenuItem = React.forwardRef<
   HTMLButtonElement,
   MenuItemProps & React.ButtonHTMLAttributes<HTMLButtonElement>
->(({ label, disabled, ...props }, forwardedRef) => {
+>(({ label, disabled, icon, variant = 'row', tone, on, ...props }, forwardedRef) => {
   const menu = useContext(MenuContext);
   const item = useListItem({ label: disabled ? null : label });
   const tree = useFloatingTree();
@@ -261,7 +269,9 @@ export const MenuItem = React.forwardRef<
       ref={useMergeRefs([item.ref, forwardedRef])}
       type="button"
       role="menuitem"
-      className="context-menu-item"
+      className={variant === 'tile' ? 'context-menu-item context-menu-tile' : 'context-menu-item'}
+      data-tone={tone}
+      data-on={on ? '' : undefined}
       tabIndex={isActive ? 0 : -1}
       disabled={disabled}
       {...menu.getItemProps({
@@ -275,7 +285,8 @@ export const MenuItem = React.forwardRef<
         },
       })}
     >
-      {label}
+      <span className="context-menu-icon">{icon}</span>
+      <span className="context-menu-label">{label}</span>
     </button>
   );
 });

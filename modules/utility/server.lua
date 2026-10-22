@@ -33,6 +33,7 @@ lib.callback.register('ox_inventory:insertArmourPlate', function(source)
     local metadata = table.clone(vest.metadata)
     metadata.plates = plates + 1
     metadata.armour = math.min(metadata.plates * Utility.armour.armourPerPlate, 100)
+    metadata.durability = metadata.armour
 
     Inventory.SetMetadata(inv, vest.slot, metadata)
 
@@ -67,6 +68,7 @@ lib.callback.register('ox_inventory:removeArmourPlates', function(source)
     local metadata = table.clone(vest.metadata)
     metadata.plates = 0
     metadata.armour = 0
+    metadata.durability = 0
 
     Inventory.SetMetadata(inv, vest.slot, metadata)
 
@@ -103,6 +105,7 @@ RegisterNetEvent('ox_inventory:updateArmourPlates', function(currentArmour)
     local metadata = table.clone(vest.metadata)
     metadata.armour = currentArmour
     metadata.plates = allowed
+    metadata.durability = currentArmour
 
     Inventory.SetMetadata(inv, vest.slot, metadata)
 

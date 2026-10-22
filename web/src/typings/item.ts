@@ -11,4 +11,6 @@ export type ItemData = {
   image?: string;
   category?: string;
   rarity?: string;
+  /** the item has a `prop` model, so it can be inspected in 3D */
+  inspect?: boolean;
 };

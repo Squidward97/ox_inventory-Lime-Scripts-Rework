@@ -2544,23 +2544,88 @@ $slotEdges: inset 0 1px 0 var(--edge-top), inset 0 0 0 1px var(--edge);
 
 // ---------------------------------------------------------------- context menu
 
+// The item it's for up top, the everyday actions (use, give, drop, favourite) as a row of tiles,
+// then a list of what's particular to the item. Submenus are the same list without the header.
+
 .context-menu-list {
-  min-width: r(210);
+  width: r(244);
   display: flex;
   flex-direction: column;
-  padding: r(6) 0;
+  padding: r(6);
   background: rgb(var(--surface) / 0.97);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.07);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.07),
+    0 r(18) r(40) rgb(0 0 0 / 0.45);
   outline: none;
   @include cut(r(8));
+}
+
+.context-menu-header {
+  display: flex;
+  align-items: center;
+  gap: r(10);
+  padding: r(4) r(4) r(10);
+  margin-bottom: r(6);
+  border-bottom: 1px solid $hairline;
+}
+
+// the item on a faint pool of its rarity colour
+.context-menu-thumb {
+  flex-shrink: 0;
+  width: r(42);
+  height: r(42);
+  // --thumb is the item's image, set inline
+  background:
+    var(--thumb) center / 78% no-repeat,
+    radial-gradient(circle at 50% 60%, rgb(var(--rarity-rgb) / 0.22), transparent 70%),
+    rgb(var(--light) / 0.04);
+  box-shadow: inset 0 0 0 1px rgb(var(--rarity-rgb) / 0.28);
+  @include cut(r(5));
+}
+
+.context-menu-heading {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: r(4);
+}
+
+.context-menu-title {
+  font-size: r(14);
+  font-weight: 700;
+  font-style: italic;
+  text-transform: uppercase;
+  line-height: 1.1;
+  color: $white;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.context-menu-details {
+  font-family: $mono;
+  font-size: r(11);
+  color: $zinc500;
+}
+
+.context-menu-tiles {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: r(4);
+}
+
+.context-menu-divider {
+  height: 1px;
+  margin: r(7) r(2) r(5);
+  background: $hairline;
 }
 
 .context-menu-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: r(16);
-  padding: r(9) r(16);
+  gap: r(10);
+  padding: r(8) r(10);
   background: transparent;
   border: none;
   outline: none;
@@ -2578,6 +2643,10 @@ $slotEdges: inset 0 1px 0 var(--edge-top), inset 0 0 0 1px var(--edge);
     color: $white;
     background: linear-gradient(90deg, rgb(var(--accent) / 0.14), transparent 80%);
     box-shadow: inset 3px 0 0 $accent;
+
+    .context-menu-icon {
+      color: $accent;
+    }
   }
 
   &:disabled {
@@ -2586,9 +2655,85 @@ $slotEdges: inset 0 1px 0 var(--edge-top), inset 0 0 0 1px var(--edge);
   }
 
   .context-menu-chevron {
+    flex-shrink: 0;
     width: r(14);
     height: r(14);
     color: $zinc500;
+  }
+}
+
+.context-menu-icon {
+  flex-shrink: 0;
+  display: flex;
+  width: r(15);
+  height: r(15);
+  color: $zinc500;
+  transition: color 150ms ease-out;
+
+  &:empty {
+    display: none;
+  }
+
+  svg {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.context-menu-label {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.context-menu-item.context-menu-tile {
+  flex-direction: column;
+  justify-content: center;
+  gap: r(7);
+  padding: r(11) r(2) r(9);
+  background: rgb(var(--light) / 0.04);
+  box-shadow: inset 0 0 0 1px rgb(var(--light) / 0.06);
+  font-size: r(10);
+  letter-spacing: 0.12em;
+  text-align: center;
+  @include cut(r(5));
+
+  .context-menu-icon {
+    width: r(18);
+    height: r(18);
+  }
+
+  .context-menu-label {
+    flex: none;
+    max-width: 100%;
+  }
+
+  &:hover,
+  &:focus {
+    background: rgb(var(--accent) / 0.12);
+    box-shadow: inset 0 0 0 1px rgb(var(--accent) / 0.55);
+  }
+
+  &[data-tone='danger']:hover,
+  &[data-tone='danger']:focus {
+    color: $red400;
+    background: rgb(239 68 68 / 0.12);
+    box-shadow: inset 0 0 0 1px rgb(239 68 68 / 0.55);
+
+    .context-menu-icon {
+      color: $red400;
+    }
+  }
+
+  // a set toggle (a favourite) keeps its icon lit and filled
+  &[data-on] .context-menu-icon {
+    color: $accent;
+
+    svg {
+      fill: currentColor;
+    }
   }
 }
 

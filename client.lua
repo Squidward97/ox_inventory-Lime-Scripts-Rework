@@ -1315,7 +1315,9 @@ RegisterNetEvent('ox_inventory:setPlayerInventory', function(currentDrops, inven
 			-- drives the NUI toolbar filters; an explicit `category` on the item wins
 			category = v.category or ((v.weapon or v.ammo or v.component or v.tint) and 'weapons')
 				or ((v.client?.status?.hunger or 0) > 0 or (v.client?.status?.thirst or 0) > 0) and 'food' or nil,
-			rarity = v.rarity
+			rarity = v.rarity,
+			-- a `prop` model makes the item inspectable like a weapon (modules/weapon/inspect.lua)
+			inspect = v.prop ~= nil and not v.weapon or nil
 		}
 	end
 

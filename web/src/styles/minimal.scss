@@ -210,4 +210,30 @@ $controlHover: rgb(255 255 255 / 0.1);
       background: $control;
     }
   }
+
+  // flat: tiles are plain fills, no rims or glows
+  .context-menu-thumb,
+  .context-menu-item.context-menu-tile {
+    box-shadow: none;
+  }
+
+  .context-menu-thumb {
+    background: var(--thumb) center / 78% no-repeat, $control;
+  }
+
+  .context-menu-item.context-menu-tile {
+    background: $control;
+
+    &:hover,
+    &:focus {
+      background: $controlHover;
+      box-shadow: none;
+    }
+
+    &[data-tone='danger']:hover,
+    &[data-tone='danger']:focus {
+      background: rgb(239 68 68 / 0.14);
+      box-shadow: none;
+    }
+  }
 }

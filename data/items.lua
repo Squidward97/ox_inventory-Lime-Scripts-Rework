@@ -71,6 +71,8 @@ return {
 	['burger'] = {
 		label = 'Burger',
 		weight = 220,
+		-- the model to inspect it as (right-click > Inspect); client.prop below is the one held while eating
+		prop = 'prop_cs_burger_01',
 		client = {
 			status = { hunger = 200000 },
 			anim = 'eating',
@@ -83,6 +85,7 @@ return {
 	['sprunk'] = {
 		label = 'Sprunk',
 		weight = 350,
+		prop = 'prop_ld_can_01',
 		client = {
 			status = { thirst = 200000 },
 			anim = { dict = 'mp_player_intdrink', clip = 'loop_bottle' },
@@ -206,6 +209,7 @@ return {
 	['water'] = {
 		label = 'Water',
 		weight = 500,
+		prop = 'prop_ld_flow_bottle',
 		client = {
 			status = { thirst = 200000 },
 			anim = { dict = 'mp_player_intdrink', clip = 'loop_bottle' },

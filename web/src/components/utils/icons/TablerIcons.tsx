@@ -149,6 +149,59 @@ export const IdIcon: React.FC<{ className?: string }> = ({ className }) => (
   </TablerIcon>
 );
 
+// context menu actions
+
+export const PlayIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <TablerIcon className={className}>
+    <path d="M7 4v16l13 -8z" />
+  </TablerIcon>
+);
+
+export const SendIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <TablerIcon className={className}>
+    <path d="M10 14l11 -11" />
+    <path d="M21 3l-6.5 18a.55 .55 0 0 1 -1 0l-3.5 -7l-7 -3.5a.55 .55 0 0 1 0 -1l18 -6.5" />
+  </TablerIcon>
+);
+
+export const DropIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <TablerIcon className={className}>
+    <path d="M4 20l16 0" />
+    <path d="M12 14l0 -10" />
+    <path d="M12 14l4 -4" />
+    <path d="M12 14l-4 -4" />
+  </TablerIcon>
+);
+
+export const CubeIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <TablerIcon className={className}>
+    <path d="M21 16.008v-8.018a1.98 1.98 0 0 0 -1 -1.717l-7 -4.008a2.016 2.016 0 0 0 -2 0l-7 4.008c-.619 .355 -1 1.01 -1 1.718v8.018c0 .709 .381 1.363 1 1.717l7 4.008a2.016 2.016 0 0 0 2 0l7 -4.008c.619 -.355 1 -1.01 1 -1.718z" />
+    <path d="M12 22v-10" />
+    <path d="M12 12l8.73 -5.04" />
+    <path d="M3.27 6.96l8.73 5.04" />
+  </TablerIcon>
+);
+
+export const CopyIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <TablerIcon className={className}>
+    <path d="M7 9.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z" />
+    <path d="M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1" />
+  </TablerIcon>
+);
+
+export const UnloadIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <TablerIcon className={className}>
+    <path d="M9 14l-4 -4l4 -4" />
+    <path d="M5 10h11a4 4 0 1 1 0 8h-1" />
+  </TablerIcon>
+);
+
+export const DotIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <TablerIcon className={className}>
+    <path d="M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
+  </TablerIcon>
+);
+
 // Mouse outline with the pressed button lit in the accent colour.
 export const MouseGlyph: React.FC<{ button: 'left' | 'right' }> = ({ button }) => (
   <svg className="mouse-glyph" viewBox="0 0 16 22" aria-hidden>

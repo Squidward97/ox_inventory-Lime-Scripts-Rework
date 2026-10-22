@@ -1,9 +1,10 @@
 if not lib then return end
 
--- Weapon inspection inside the open inventory. The UI swaps its right column for an inspect panel
--- with a see-through window; here the weapon is spawned as a frozen world object with its
--- attachments, filmed side-on by a scripted camera aimed so the weapon lands in that window, and
--- each attachment point is projected to the screen so the UI can pin its label on it.
+-- Weapon and item inspection inside the open inventory. The UI swaps its right column for an
+-- inspect panel with a see-through window; here the weapon is spawned as a frozen world object with
+-- its attachments, filmed side-on by a scripted camera aimed so the weapon lands in that window, and
+-- each attachment point is projected to the screen so the UI can pin its label on it. Any other item
+-- with a `prop` in data/items.lua is filmed the same way as that model, without the weapon extras.
 -- The UI can't be drawn under a world object, so instead the inventory's backdrop is drawn behind
 -- the weapon: the UI page loaded again as a DUI (#backdrop=, web/src/main.tsx), drawn full-screen and
 -- see-through like the UI's own, which the UI hides meanwhile (see drawBackdrop for how it's laid).
@@ -22,13 +23,24 @@ local baseHeading = 0.0
 local rotateHeading = 0.0
 ---@type { x: number, y: number, w: number, h: number }? the UI window, as fractions of the screen
 local windowRect
+-- the model being inspected when it's an item rather than a weapon
+local activeProp ---@type { model: number, rotation: vector3?, zoom: number }?
+-- A prop turns freely, round its own centre: its axes in the world (as columns), the world point
+-- its centre stays on, and where that centre sits in the model.
+local propAxes ---@type { x: vector3, y: vector3, z: vector3 }?
+local propPivot ---@type vector3?
+local propCentre ---@type vector3?
+-- scroll zoom, as a narrower field of view (a prop's `zoom` is where it starts)
+local zoom = 1.0
 -- where the camera sits and how it is turned, for the backdrop quad
-local camState ---@type { coords: vector3, pitch: number, yaw: number, distance: number }?
+local camState ---@type { coords: vector3, pitch: number, yaw: number, distance: number, fov: number }?
 
 -- vertical field of view of the camera; wide enough that even long rifles sit close to the lens
 local CAMERA_FOV = 50.0
 -- share of the window the weapon spans
 local FILL = 0.7
+-- how far scroll zoom goes, and how much one notch does
+local ZOOM_MIN, ZOOM_MAX, ZOOM_STEP = 0.7, 4.0, 1.12
 -- easing back to the gameplay camera on close; opening cuts, so the backdrop lines up from the start
 local CAMERA_EASE = 300
 -- key light from the camera, so the weapon stays lit against the backdrop at night; 0 turns it off
@@ -37,6 +49,11 @@ local LIGHT_INTENSITY = 1.0
 local BACKDROP_TINT = { 255, 255, 255 }
 -- how far from the lens the backdrop sits round the window, in front of anything in the world
 local NEAR_DEPTH = 0.4
+-- Depth of field blurs the world beyond the object, as the inventory's screen blur does (which
+-- would blur the object too): how strong (0 turns it off), and over how many metres past the
+-- object it fades from sharp to fully blurred.
+local DOF_STRENGTH = 1.0
+local DOF_FALLOFF = 1.0
 
 local BACKDROP_TXD = 'ox_inventory_inspect'
 local backdropDui ---@type number?
@@ -82,6 +99,26 @@ local function weaponTakesType(weaponHash, componentType)
 	return false
 end
 
+-- An item's `prop`: a model name (or hash), or { model, rotation = vec3(pitch, roll, yaw), zoom }.
+-- Weapons film their own weapon object instead.
+---@return { model: number, rotation: vector3?, zoom: number }?
+local function propOf(data)
+	local prop = data?.prop
+	if not prop or data.weapon then return end
+	if type(prop) ~= 'table' then prop = { model = prop } end
+
+	local model = type(prop.model) == 'string' and joaat(prop.model) or prop.model
+	if type(model) ~= 'number' then return end
+
+	local rotation = prop.rotation
+
+	if rotation then
+		rotation = vector3(rotation.x or rotation[1] or 0.0, rotation.y or rotation[2] or 0.0, rotation.z or rotation[3] or 0.0)
+	end
+
+	return { model = model, rotation = rotation, zoom = tonumber(prop.zoom) or 1.0 }
+end
+
 -- GetWeaponHudStats has no usable out-struct from Lua; invoking the native with our own blob works.
 local function readHudStats(weaponHash)
 	if not string.blob then return end
@@ -99,10 +136,22 @@ local function readHudStats(weaponHash)
 	return damage, fireRate, accuracy, range
 end
 
----@return table? state for the UI, or nil when the slot no longer holds an inspectable weapon
+---@return table? state for the UI, or nil when the slot no longer holds an inspectable weapon or item
 local function buildState(slot)
 	local item = PlayerData.inventory[slot]
 	local data = item and Items[item.name]
+
+	-- the UI reads an item's durability, weight and description off the slot itself
+	if propOf(data) then
+		return {
+			kind = 'item',
+			slot = slot,
+			name = item.name,
+			label = item.metadata?.label or data.label,
+			slots = {},
+		}
+	end
+
 	if not data?.weapon or data.throwable then return end
 
 	local metadata = item.metadata or {}
@@ -151,6 +200,7 @@ local function buildState(slot)
 	local damage, fireRate, accuracy, range = readHudStats(data.hash)
 
 	return {
+		kind = 'weapon',
 		slot = slot,
 		name = item.name,
 		label = metadata.label or data.label,
@@ -180,16 +230,106 @@ local function ensureWeaponAsset(weaponHash)
 	return HasWeaponAssetLoaded(weaponHash)
 end
 
--- how far the camera sits so the weapon spans FILL of the window
-local function cameraDistance(model)
+-- Rows of the rotation for (pitch, roll, yaw) in degrees: roll, then pitch, then yaw (Rz * Rx * Ry).
+local function rotationRows(rotation)
+	local px, py, pz = math.rad(rotation.x), math.rad(rotation.y), math.rad(rotation.z)
+	local cx, sx, cy, sy, cz, sz = math.cos(px), math.sin(px), math.cos(py), math.sin(py), math.cos(pz), math.sin(pz)
+
+	return {
+		{ cz * cy - sz * sx * sy, -sz * cx, cz * sy + sz * sx * cy },
+		{ sz * cy + cz * sx * sy, cz * cx, sz * sy - cz * sx * cy },
+		{ -cx * sy, sx, cx * cy },
+	}
+end
+
+-- The model's size along its axes as it's shown: a prop's rotation turns its box first, so the
+-- frame fits what's on screen.
+local function shownSize(model)
 	local min, max = GetModelDimensions(model)
-	local length = math.max(max.x - min.x, max.y - min.y, 0.15)
-	local height = math.max(max.z - min.z, 0.08)
+	local size = max - min
+	local rotation = activeProp?.rotation
+
+	if not rotation or rotation == vector3(0.0, 0.0, 0.0) then return size end
+
+	-- a turned box spans the sum of its sides' reach along each axis
+	local m = rotationRows(rotation)
+
+	local function reach(row)
+		return math.abs(row[1]) * size.x + math.abs(row[2]) * size.y + math.abs(row[3]) * size.z
+	end
+
+	return vector3(reach(m[1]), reach(m[2]), reach(m[3]))
+end
+
+-- A prop with no rotation of its own is turned so its broadest face meets the camera, which films
+-- the model's +Y side: the thinnest side ends up along Y. A flat thing (a card, a note) is stood up.
+local function autoRotation(model)
+	local min, max = GetModelDimensions(model)
+	local size = max - min
+
+	if size.z < math.min(size.x, size.y) * 0.6 then
+		return vector3(-90.0, 0.0, 0.0)
+	end
+
+	return vector3(0.0, 0.0, size.x < size.y and 90.0 or 0.0)
+end
+
+-- how far the camera sits so the weapon or prop spans FILL of the window
+local function cameraDistance(model)
+	local size = shownSize(model)
+	local length = math.max(size.x, size.y, 0.15)
+	local height = math.max(size.z, 0.08)
 	local tanV = math.tan(math.rad(CAMERA_FOV / 2))
 	local tanH = tanV * GetAspectRatio(false)
 	local rect = windowRect or { w = 0.3, h = 0.4 }
 
 	return math.max(length / (rect.w * FILL * 2 * tanH), height / (rect.h * FILL * 2 * tanV))
+end
+
+-- the field of view for the current zoom
+local function cameraFov()
+	return math.deg(2 * math.atan(math.tan(math.rad(CAMERA_FOV / 2)) / zoom))
+end
+
+-- v turned round the unit axis k by angle radians
+local function turnVector(v, k, angle)
+	local c, s = math.cos(angle), math.sin(angle)
+	local cross = vector3(k.y * v.z - k.z * v.y, k.z * v.x - k.x * v.z, k.x * v.y - k.y * v.x)
+
+	return v * c + cross * s + k * ((k.x * v.x + k.y * v.y + k.z * v.z) * (1 - c))
+end
+
+-- Place a prop from its axes, its centre kept on the pivot. Setting the matrix outright lets it
+-- turn any way, with no Euler order to fight.
+local function placeProp()
+	local axes = propAxes
+	local at = propPivot - (axes.x * propCentre.x + axes.y * propCentre.y + axes.z * propCentre.z)
+
+	SetEntityMatrix(previewObject, axes.y.x, axes.y.y, axes.y.z, axes.x.x, axes.x.y, axes.x.z,
+		axes.z.x, axes.z.y, axes.z.z, at.x, at.y, at.z)
+end
+
+-- A weapon spins round the vertical. A prop is set up from its own rotation, turned to face the
+-- player's side, with its centre on the spawn point.
+local function applyRotation(coords)
+	if previewObject == 0 then return end
+
+	if not activeProp then
+		return SetEntityHeading(previewObject, baseHeading + rotateHeading)
+	end
+
+	local rotation = activeProp.rotation
+	local m = rotationRows(vector3(rotation.x, rotation.y, baseHeading + rotation.z))
+	local min, max = GetModelDimensions(activeProp.model)
+
+	propAxes = {
+		x = vector3(m[1][1], m[2][1], m[3][1]),
+		y = vector3(m[1][2], m[2][2], m[3][2]),
+		z = vector3(m[1][3], m[2][3], m[3][3]),
+	}
+	propPivot = coords
+	propCentre = (min + max) / 2
+	placeProp()
 end
 
 local function deletePreview()
@@ -208,12 +348,18 @@ local function deletePreview()
 	ClearFocus()
 end
 
+---@param weaponHash number? the weapon to film; nil films activeProp's model
 local function spawnObject(weaponHash, metadata, coords)
 	if previewObject ~= 0 and DoesEntityExist(previewObject) then
 		DeleteObject(previewObject)
 	end
 
-	previewObject = CreateWeaponObject(weaponHash, 0, coords.x, coords.y, coords.z, true, 1.0, 0)
+	if weaponHash then
+		previewObject = CreateWeaponObject(weaponHash, 0, coords.x, coords.y, coords.z, true, 1.0, 0)
+	else
+		-- local only: nobody else needs to see it
+		previewObject = CreateObjectNoOffset(activeProp.model, coords.x, coords.y, coords.z, false, false, false)
+	end
 
 	if previewObject == 0 or not DoesEntityExist(previewObject) then
 		previewObject = 0
@@ -223,7 +369,10 @@ local function spawnObject(weaponHash, metadata, coords)
 	SetEntityCollision(previewObject, false, false)
 	FreezeEntityPosition(previewObject, true)
 	SetEntityCoordsNoOffset(previewObject, coords.x, coords.y, coords.z, false, false, false)
-	SetEntityHeading(previewObject, baseHeading + rotateHeading)
+	applyRotation(coords)
+	SetFocusEntity(previewObject)
+
+	if not weaponHash then return true end
 
 	if metadata.tint then
 		SetWeaponObjectTintIndex(previewObject, metadata.tint)
@@ -238,12 +387,11 @@ local function spawnObject(weaponHash, metadata, coords)
 		end
 	end
 
-	SetFocusEntity(previewObject)
 	return true
 end
 
--- Film the weapon side-on from its +Y axis as it sat when the inspection opened, then turn the
--- camera so the weapon lands in the middle of the window rather than the middle of the screen.
+-- Film the object side-on from its +Y axis as it sat when the inspection opened, then turn the
+-- camera so it lands in the middle of the window rather than the middle of the screen.
 local function aimCamera()
 	if previewCam == 0 or previewObject == 0 then return end
 
@@ -258,8 +406,10 @@ local function aimCamera()
 	local yaw = math.deg(math.atan(-delta.x, delta.y))
 	local pitch = math.deg(math.atan(delta.z, math.sqrt(delta.x * delta.x + delta.y * delta.y)))
 
+	local fov = cameraFov()
+
 	if windowRect then
-		local tanV = math.tan(math.rad(CAMERA_FOV / 2))
+		local tanV = math.tan(math.rad(fov / 2))
 		local tanH = tanV * GetAspectRatio(false)
 		local u = (windowRect.x + windowRect.w / 2 - 0.5) * 2
 		local v = (windowRect.y + windowRect.h / 2 - 0.5) * 2
@@ -270,9 +420,22 @@ local function aimCamera()
 
 	SetCamCoord(previewCam, camCoords.x, camCoords.y, camCoords.z)
 	SetCamRot(previewCam, pitch, 0.0, yaw, 2)
-	SetCamFov(previewCam, CAMERA_FOV)
+	SetCamFov(previewCam, fov)
 
-	camState = { coords = camCoords, pitch = pitch, yaw = yaw, distance = #delta }
+	camState = { coords = camCoords, pitch = pitch, yaw = yaw, distance = #delta, fov = fov }
+
+	-- In focus from the lens to just past the object, so the object and the backdrop behind it
+	-- (drawn just past it) stay sharp and only the world shows blurred. SetUseHiDof keeps it on,
+	-- every frame, from the draw loop.
+	if DOF_STRENGTH > 0 then
+		local sharp = #delta + #(max - min) / 2 + 0.2
+
+		SetCamUseShallowDofMode(previewCam, true)
+		SetCamDofStrength(previewCam, DOF_STRENGTH)
+		SetCamNearDof(previewCam, 0.01)
+		SetCamFarDof(previewCam, sharp)
+		SetCamDofPlanes(previewCam, 0.0, 0.0, sharp, sharp + DOF_FALLOFF)
+	end
 end
 
 local function uiStyle()
@@ -348,8 +511,9 @@ local function drawBackdrop()
 	if backdropTexture then
 		-- just past the weapon however it's turned, so nearby walls don't come between
 		local min, max = GetModelDimensions(GetEntityModel(previewObject))
-		local depth = camState.distance + #(max - min) / 2 + 0.1
-		local halfH = depth * math.tan(math.rad(CAMERA_FOV / 2))
+		local radius = #(max - min) / 2
+		local depth = camState.distance + radius + 0.1
+		local halfH = depth * math.tan(math.rad(camState.fov / 2))
 		local halfW = halfH * GetAspectRatio(false)
 		local centre = camState.coords + forward * depth
 
@@ -397,9 +561,14 @@ local function drawBackdrop()
 			-- precision puts the near one's edge half a pixel either way. So the near frame stops a couple
 			-- of pixels short of the window, and a strip sharing the exact corners of both closes the gap;
 			-- triangles on shared vertices meet with no crack and no overlap.
+			-- In front of the object too, so a zoomed or turned object that outgrows the window is cut
+			-- off at its edge. Closer in, the precision error grows, so the margin grows with it.
+			local nearDepth = math.max(math.min(NEAR_DEPTH, (camState.distance - radius) * 0.7), 0.05)
+			local margin = 2 * math.max(1, NEAR_DEPTH / nearDepth)
+
 			local x0, y0 = windowRect.x, windowRect.y
 			local x1, y1 = x0 + windowRect.w, y0 + windowRect.h
-			local ex, ey = 2 / backdropSize[1], 2 / backdropSize[2]
+			local ex, ey = margin / backdropSize[1], margin / backdropSize[2]
 
 			local ftl, ftr = vertex(x0, y0, depth), vertex(x1, y0, depth)
 			local fbr, fbl = vertex(x1, y1, depth), vertex(x0, y1, depth)
@@ -412,7 +581,7 @@ local function drawBackdrop()
 			for row = 1, 4 do
 				near[row] = {}
 				for col = 1, 4 do
-					near[row][col] = vertex(xs[col], ys[row], NEAR_DEPTH)
+					near[row][col] = vertex(xs[col], ys[row], nearDepth)
 				end
 			end
 
@@ -445,26 +614,41 @@ local function startDrawing()
 	CreateThread(function()
 		while token == drawToken do
 			drawBackdrop()
+			-- the camera's shallow depth of field only holds while this is called each frame
+			if DOF_STRENGTH > 0 then SetUseHiDof() end
 			Wait(0)
 		end
 	end)
 end
 
+---@param weaponHash number? nil films activeProp's model
 local function spawnPreview(weaponHash, metadata)
 	deletePreview()
-	if not ensureWeaponAsset(weaponHash) then return false end
 
-	-- the camera sits between the player and the weapon, looking away from the player, so the
-	-- weapon is placed far enough out for that gap
+	local model
+
+	if weaponHash then
+		if not ensureWeaponAsset(weaponHash) then return false end
+		model = GetWeapontypeModel(weaponHash)
+	else
+		model = activeProp.model
+		if not IsModelInCdimage(model) or not pcall(lib.requestModel, model, 5000) then return false end
+		activeProp.rotation = activeProp.rotation or autoRotation(model)
+	end
+
+	-- the camera sits between the player and the object, looking away from the player, so the
+	-- object is placed far enough out for that gap
 	local ped = cache.ped
 	local forward = GetEntityForwardVector(ped)
-	local distance = cameraDistance(GetWeapontypeModel(weaponHash))
+	local distance = cameraDistance(model)
 	local coords = GetEntityCoords(ped) + forward * (distance + 0.9) + vector3(0.0, 0.0, 0.45)
 
 	baseHeading = GetEntityHeading(ped) + 180.0
 	rotateHeading = 0.0
 
-	if not spawnObject(weaponHash, metadata, coords) then return false end
+	local spawned = spawnObject(weaponHash, metadata, coords)
+	if not weaponHash then SetModelAsNoLongerNeeded(model) end
+	if not spawned then return false end
 
 	previewCam = CreateCam('DEFAULT_SCRIPTED_CAMERA', true)
 	aimCamera()
@@ -476,6 +660,8 @@ end
 
 local function sendPins()
 	if not inspecting or previewObject == 0 or not DoesEntityExist(previewObject) then return end
+	-- items have no attachment points
+	if activeProp then return SendNUIMessage({ action = 'inspectPins', data = {} }) end
 
 	local pins = {}
 	local min, max = GetModelDimensions(GetEntityModel(previewObject))
@@ -516,7 +702,7 @@ end
 local function refreshObject()
 	local weapon = activeSlot and PlayerData.inventory[activeSlot]
 	local data = weapon and Items[weapon.name]
-	if not data or previewObject == 0 then return end
+	if not data?.weapon or previewObject == 0 then return end
 
 	spawnObject(data.hash, weapon.metadata or {}, GetEntityCoords(previewObject))
 	sendPinsSoon(50)
@@ -531,10 +717,11 @@ function Inspect.open(slot, rect, equippedSlot)
 
 	local item = PlayerData.inventory[slot]
 	local data = item and Items[item.name]
-	if not data?.weapon or data.throwable then return end
+	local prop = propOf(data)
+	if not prop and (not data?.weapon or data.throwable) then return end
 
 	-- holster it, so the weapon in hand never goes out of sync with its attachments
-	if equippedSlot == slot then
+	if not prop and equippedSlot == slot then
 		TriggerEvent('ox_inventory:disarm', true)
 	end
 
@@ -543,6 +730,8 @@ function Inspect.open(slot, rect, equippedSlot)
 
 	windowRect = rect
 	activeSlot = slot
+	activeProp = prop
+	zoom = math.min(math.max(prop?.zoom or 1.0, ZOOM_MIN), ZOOM_MAX)
 	inspecting = true
 
 	-- the UI hides its own backdrop only when this one is drawn; without it the UI cuts a window
@@ -550,7 +739,7 @@ function Inspect.open(slot, rect, equippedSlot)
 	state.backdrop = ensureBackdrop()
 	if not inspecting then return end
 
-	if not spawnPreview(data.hash, item.metadata or {}) then
+	if not spawnPreview(not prop and data.hash or nil, item.metadata or {}) then
 		Inspect.close(true)
 		return
 	end
@@ -571,6 +760,8 @@ function Inspect.close(keepBlur)
 	windowRect = nil
 	drawToken = drawToken + 1
 	deletePreview()
+	activeProp = nil
+	propAxes, propPivot, propCentre = nil, nil, nil
 
 	if not keepBlur and client.screenblur then Utils.blurIn() end
 end
@@ -597,13 +788,46 @@ RegisterNUICallback('inspectState', function(_, cb)
 	cb(inspecting and activeSlot and buildState(activeSlot) or false)
 end)
 
+-- delta turns round the vertical; pitch (props only) tips it toward or away from the camera
 RegisterNUICallback('inspectRotate', function(data, cb)
 	cb(1)
 	if not inspecting or previewObject == 0 then return end
 
-	rotateHeading = rotateHeading + (tonumber(data?.delta) or 0)
-	SetEntityHeading(previewObject, baseHeading + rotateHeading)
-	sendPins()
+	local delta = tonumber(data?.delta) or 0
+
+	if not propAxes then
+		rotateHeading = rotateHeading + delta
+		applyRotation()
+		return sendPins()
+	end
+
+	local pitch = tonumber(data?.pitch) or 0
+	local up = vector3(0.0, 0.0, 1.0)
+	local right = camState and vector3(math.cos(math.rad(camState.yaw)), math.sin(math.rad(camState.yaw)), 0.0)
+
+	for axis, vector in pairs(propAxes) do
+		vector = turnVector(vector, up, math.rad(delta))
+		-- turning round the camera's right tips the top toward it as the drag goes down
+		if right then vector = turnVector(vector, right, math.rad(pitch)) end
+		propAxes[axis] = vector
+	end
+
+	-- small turns add up rounding: square the axes back up so the model never skews
+	local x = norm(propAxes.x)
+	local y = norm(propAxes.y - x * (x.x * propAxes.y.x + x.y * propAxes.y.y + x.z * propAxes.y.z))
+	propAxes.x, propAxes.y = x, y
+	propAxes.z = vector3(x.y * y.z - x.z * y.y, x.z * y.x - x.x * y.z, x.x * y.y - x.y * y.x)
+
+	placeProp()
+end)
+
+-- scroll zoom on a prop: steps > 0 zooms in
+RegisterNUICallback('inspectZoom', function(data, cb)
+	cb(1)
+	if not inspecting or not activeProp then return end
+
+	zoom = math.min(math.max(zoom * ZOOM_STEP ^ (tonumber(data?.steps) or 0), ZOOM_MIN), ZOOM_MAX)
+	aimCamera()
 end)
 
 RegisterNUICallback('inspectRect', function(rect, cb)
@@ -616,7 +840,7 @@ RegisterNUICallback('inspectRect', function(rect, cb)
 end)
 
 RegisterNUICallback('inspectApply', function(data, cb)
-	if not inspecting or not activeSlot or type(data?.slot) ~= 'number' then return cb(false) end
+	if not inspecting or not activeSlot or activeProp or type(data?.slot) ~= 'number' then return cb(false) end
 
 	local weapon = PlayerData.inventory[activeSlot]
 	local component = PlayerData.inventory[data.slot]
@@ -645,7 +869,7 @@ RegisterNUICallback('inspectApply', function(data, cb)
 end)
 
 RegisterNUICallback('inspectRemove', function(data, cb)
-	if not inspecting or not activeSlot or type(data?.component) ~= 'string' then return cb(false) end
+	if not inspecting or not activeSlot or activeProp or type(data?.component) ~= 'string' then return cb(false) end
 
 	if not lib.callback.await('ox_inventory:updateWeapon', false, 'component', { slot = activeSlot, component = data.component }) then
 		return cb(false)

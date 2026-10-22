@@ -18,6 +18,8 @@ export interface InspectSlot {
 }
 
 export interface InspectData {
+  /** an item is filmed as its `prop` model, with no stats or attachments */
+  kind?: 'weapon' | 'item';
   slot: number;
   name: string;
   label: string;
