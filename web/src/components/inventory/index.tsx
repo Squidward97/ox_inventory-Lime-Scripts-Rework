@@ -26,11 +26,15 @@ const Inventory: React.FC = () => {
   const dispatch = useAppDispatch();
   const inspecting = useAppSelector((state) => state.inspect.slot !== null);
   const inspectWindow = useAppSelector((state) => state.inspect.window);
+  const inspectBackdrop = useAppSelector((state) => state.inspect.backdrop);
 
-  // While inspecting, cut the inspect window out of the backdrop: the screen outline and the window
+  // While inspecting, the client draws the backdrop behind the weapon and this one hides. Should it
+  // not, the inspect window is cut out of this one instead: the screen outline and the window
   // outline as one even-odd polygon, so the window is a hole the game shows through.
   const backdropStyle: React.CSSProperties | undefined =
-    inspecting && inspectWindow
+    inspecting && inspectBackdrop
+      ? { visibility: 'hidden' }
+      : inspecting && inspectWindow
       ? (() => {
           const { left, top, width, height } = inspectWindow;
           const right = left + width;

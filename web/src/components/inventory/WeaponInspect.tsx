@@ -6,6 +6,7 @@ import {
   InspectData,
   InspectPin,
   selectInspectSlot,
+  setInspectBackdrop,
   setInspectData,
   setInspectPins,
   setInspectWindow,
@@ -138,8 +139,10 @@ const WeaponInspect: React.FC = () => {
 
       const state = await fetchNui<InspectData | false>('inspectWeapon', { slot, rect: toScreenRect(rect) });
 
-      if (state) dispatch(setInspectData(state));
-      else {
+      if (state) {
+        dispatch(setInspectData(state));
+        dispatch(setInspectBackdrop(!!state.backdrop));
+      } else {
         playSound('error');
         dispatch(endInspect());
       }

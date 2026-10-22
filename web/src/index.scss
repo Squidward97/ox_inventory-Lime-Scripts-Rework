@@ -2037,21 +2037,15 @@ $slotEdges: inset 0 1px 0 var(--edge-top), inset 0 0 0 1px var(--edge);
 
 // ---------------------------------------------------------------- weapon inspection
 
-// While a weapon is inspected the backdrop gets a hole where the inspect window is (a clip-path set
-// from the window's measured rect in index.tsx), so the game, where the weapon is filmed, shows
-// through only there. Not a mask: FiveM's browser doesn't apply masks reliably, while clip-path
-// renders fine. Behind the weapon the client draws this same backdrop (the page loaded again as a
-// DUI with #backdrop=, see main.tsx), so the hole doesn't read as a window onto the game.
+// While a weapon is inspected the client draws this same backdrop, alpha and all, behind the weapon
+// (the page loaded again as a DUI with #backdrop=, see main.tsx) and the UI hides its own (index.tsx).
+// Should the DUI fail, the backdrop gets a hole where the inspect window is instead (a clip-path set
+// from the window's measured rect), so the game, where the weapon is filmed, shows through there.
+// Not a mask: FiveM's browser doesn't apply masks reliably, while clip-path renders fine.
 
 // the window must stay a plain rectangle to match the camera, so the right column stops tilting
 :root[data-uistyle='tactical'] .inventory-wrapper[data-inspecting='true'] .inventory-column-right {
   transform: none;
-}
-
-// The backdrop goes opaque over black, so round the hole it looks just like the DUI copy inside it.
-// :root outranks the themes' own backdrop rules, whose background shorthand would clear the colour.
-:root .inventory-wrapper[data-inspecting='true'] .inventory-backdrop {
-  background-color: #000;
 }
 
 .inspect-panel {

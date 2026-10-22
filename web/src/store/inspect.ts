@@ -31,6 +31,8 @@ export interface InspectData {
   accuracy?: number;
   range?: number;
   slots: InspectSlot[];
+  /** set on opening only: the client draws the backdrop behind the weapon */
+  backdrop?: boolean;
 }
 
 /** An attachment point projected to the screen, as fractions of its width and height */
@@ -54,6 +56,8 @@ interface InspectState {
   pins: InspectPin[];
   window: InspectWindow | null;
   selected: string | null;
+  // the client draws the whole backdrop behind the weapon, so the UI hides its own
+  backdrop: boolean;
 }
 
 const initialState: InspectState = {
@@ -62,6 +66,7 @@ const initialState: InspectState = {
   pins: [],
   window: null,
   selected: null,
+  backdrop: false,
 };
 
 export const inspectSlice = createSlice({
@@ -86,10 +91,20 @@ export const inspectSlice = createSlice({
     selectInspectSlot(state, action: PayloadAction<string | null>) {
       state.selected = action.payload;
     },
+    setInspectBackdrop(state, action: PayloadAction<boolean>) {
+      state.backdrop = action.payload;
+    },
   },
 });
 
-export const { startInspect, endInspect, setInspectData, setInspectPins, setInspectWindow, selectInspectSlot } =
-  inspectSlice.actions;
+export const {
+  startInspect,
+  endInspect,
+  setInspectData,
+  setInspectPins,
+  setInspectWindow,
+  selectInspectSlot,
+  setInspectBackdrop,
+} = inspectSlice.actions;
 
 export default inspectSlice.reducer;

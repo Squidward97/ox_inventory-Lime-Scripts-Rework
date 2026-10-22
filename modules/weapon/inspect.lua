@@ -5,8 +5,8 @@ if not lib then return end
 -- attachments, filmed side-on by a scripted camera aimed so the weapon lands in that window, and
 -- each attachment point is projected to the screen so the UI can pin its label on it.
 -- The UI can't be drawn under a world object, so instead the inventory's backdrop is drawn behind
--- the weapon: the UI page loaded again as a DUI (#backdrop=, web/src/main.tsx), on a quad that fills
--- the camera's view just past the weapon. Through the window the weapon then sits on the backdrop.
+-- the weapon: the UI page loaded again as a DUI (#backdrop=, web/src/main.tsx), drawn full-screen and
+-- see-through like the UI's own, which the UI hides meanwhile (see drawBackdrop for how it's laid).
 -- Attaching and removing go through the existing ox_inventory:updateWeapon callback.
 
 local Items = require 'modules.items.client'
@@ -29,12 +29,14 @@ local camState ---@type { coords: vector3, pitch: number, yaw: number, distance:
 local CAMERA_FOV = 50.0
 -- share of the window the weapon spans
 local FILL = 0.7
--- easing back to the gameplay camera on close; opening cuts, as the backdrop hides the world anyway
+-- easing back to the gameplay camera on close; opening cuts, so the backdrop lines up from the start
 local CAMERA_EASE = 300
 -- key light from the camera, so the weapon stays lit against the backdrop at night; 0 turns it off
 local LIGHT_INTENSITY = 1.0
 -- multiplies the backdrop's colour, to pull it back in line should the game's grading shift it
 local BACKDROP_TINT = { 255, 255, 255 }
+-- how far from the lens the backdrop sits round the window, in front of anything in the world
+local NEAR_DEPTH = 0.4
 
 local BACKDROP_TXD = 'ox_inventory_inspect'
 local backdropDui ---@type number?
@@ -330,7 +332,7 @@ local function drawTriangle(a, b, c, uvA, uvB, uvC)
 		uvA[1], uvA[2], 1.0, uvB[1], uvB[2], 1.0, uvC[1], uvC[2], 1.0)
 end
 
--- one frame of the backdrop quad and the key light
+-- one frame of the backdrop and the key light
 local function drawBackdrop()
 	if not camState or previewObject == 0 then return end
 
@@ -351,16 +353,83 @@ local function drawBackdrop()
 		local halfW = halfH * GetAspectRatio(false)
 		local centre = camState.coords + forward * depth
 
-		local tl = centre - right * halfW + up * halfH
-		local tr = centre + right * halfW + up * halfH
-		local bl = centre - right * halfW - up * halfH
-		local br = centre + right * halfW - up * halfH
+		-- On a plane square to the camera, screen position is linear in the offset along right and
+		-- up. Measuring that line through the game's own projection (as the pins are placed) keeps
+		-- the pieces on the screen where they're meant to be; the FOV alone left them a little off.
+		local originX, originY, scaleX, scaleY = 0.5, 0.5, 0.5 / halfW, -0.5 / halfH
+		local sideX, sideY = centre + right * (halfW * 0.5), centre + up * (halfH * 0.5)
+		local okO, ox, oy = GetScreenCoordFromWorldCoord(centre.x, centre.y, centre.z)
+		local okX, rx = GetScreenCoordFromWorldCoord(sideX.x, sideX.y, sideX.z)
+		local okY, _, uy = GetScreenCoordFromWorldCoord(sideY.x, sideY.y, sideY.z)
 
-		-- both windings, as a poly only shows from one side
-		drawTriangle(tl, tr, br, { 0.0, 0.0 }, { 1.0, 0.0 }, { 1.0, 1.0 })
-		drawTriangle(tl, br, bl, { 0.0, 0.0 }, { 1.0, 1.0 }, { 0.0, 1.0 })
-		drawTriangle(tl, br, tr, { 0.0, 0.0 }, { 1.0, 1.0 }, { 1.0, 0.0 })
-		drawTriangle(tl, bl, br, { 0.0, 0.0 }, { 0.0, 1.0 }, { 1.0, 1.0 })
+		if okO and okX and okY and rx ~= ox and uy ~= oy then
+			originX, originY = ox, oy
+			scaleX, scaleY = (rx - ox) / (halfW * 0.5), (uy - oy) / (halfH * 0.5)
+		end
+
+		-- the point at screen x, y on the plane square to the camera at distance d
+		local function at(x, y, d)
+			local k = d / depth
+			return camState.coords + forward * d + right * ((x - originX) / scaleX * k) + up * ((y - originY) / scaleY * k)
+		end
+
+		-- a vertex at screen x, y and distance d, textured by its screen position
+		local function vertex(x, y, d)
+			return { pos = at(x, y, d), uv = { math.min(math.max(x, 0.0), 1.0), math.min(math.max(y, 0.0), 1.0) } }
+		end
+
+		-- a, b, c, d go round the quad; both windings, as a poly only shows from one side (so the
+		-- see-through texture is laid once)
+		local function quad(a, b, c, d)
+			drawTriangle(a.pos, b.pos, c.pos, a.uv, b.uv, c.uv)
+			drawTriangle(a.pos, c.pos, d.pos, a.uv, c.uv, d.uv)
+			drawTriangle(a.pos, c.pos, b.pos, a.uv, c.uv, b.uv)
+			drawTriangle(a.pos, d.pos, c.pos, a.uv, d.uv, c.uv)
+		end
+
+		if not windowRect then
+			quad(vertex(-0.01, -0.01, depth), vertex(1.01, -0.01, depth), vertex(1.01, 1.01, depth), vertex(-0.01, 1.01, depth))
+		else
+			-- Only the window, where the weapon is, has to sit behind it; round it the backdrop sits right
+			-- by the lens, where ground and walls can't come in front (one plane behind a long rifle reaches
+			-- into the ground). Every piece is square to the camera and textured by screen position, so
+			-- they read as one. Pieces at two depths can't meet on a shared edge: the world's float
+			-- precision puts the near one's edge half a pixel either way. So the near frame stops a couple
+			-- of pixels short of the window, and a strip sharing the exact corners of both closes the gap;
+			-- triangles on shared vertices meet with no crack and no overlap.
+			local x0, y0 = windowRect.x, windowRect.y
+			local x1, y1 = x0 + windowRect.w, y0 + windowRect.h
+			local ex, ey = 2 / backdropSize[1], 2 / backdropSize[2]
+
+			local ftl, ftr = vertex(x0, y0, depth), vertex(x1, y0, depth)
+			local fbr, fbl = vertex(x1, y1, depth), vertex(x0, y1, depth)
+			quad(ftl, ftr, fbr, fbl)
+
+			local xs = { -0.01, x0 - ex, x1 + ex, 1.01 }
+			local ys = { -0.01, y0 - ey, y1 + ey, 1.01 }
+			local near = {}
+
+			for row = 1, 4 do
+				near[row] = {}
+				for col = 1, 4 do
+					near[row][col] = vertex(xs[col], ys[row], NEAR_DEPTH)
+				end
+			end
+
+			for row = 1, 3 do
+				for col = 1, 3 do
+					if row ~= 2 or col ~= 2 then
+						quad(near[row][col], near[row][col + 1], near[row + 1][col + 1], near[row + 1][col])
+					end
+				end
+			end
+
+			local ntl, ntr, nbr, nbl = near[2][2], near[2][3], near[3][3], near[3][2]
+			quad(ntl, ntr, ftr, ftl)
+			quad(ntr, nbr, fbr, ftr)
+			quad(nbr, nbl, fbl, fbr)
+			quad(nbl, ntl, ftl, fbl)
+		end
 	end
 
 	if LIGHT_INTENSITY > 0 then
@@ -476,8 +545,9 @@ function Inspect.open(slot, rect, equippedSlot)
 	activeSlot = slot
 	inspecting = true
 
-	-- without the backdrop the window still works, it just shows the world behind the weapon
-	ensureBackdrop()
+	-- the UI hides its own backdrop only when this one is drawn; without it the UI cuts a window
+	-- in its own instead, which shows the world behind the weapon
+	state.backdrop = ensureBackdrop()
 	if not inspecting then return end
 
 	if not spawnPreview(data.hash, item.metadata or {}) then
