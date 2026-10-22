@@ -4,6 +4,9 @@ if not lib then return end
 -- with a see-through window; here the weapon is spawned as a frozen world object with its
 -- attachments, filmed side-on by a scripted camera aimed so the weapon lands in that window, and
 -- each attachment point is projected to the screen so the UI can pin its label on it.
+-- The UI can't be drawn under a world object, so instead the inventory's backdrop is drawn behind
+-- the weapon: the UI page loaded again as a DUI (#backdrop=, web/src/main.tsx), on a quad that fills
+-- the camera's view just past the weapon. Through the window the weapon then sits on the backdrop.
 -- Attaching and removing go through the existing ox_inventory:updateWeapon callback.
 
 local Items = require 'modules.items.client'
@@ -19,12 +22,29 @@ local baseHeading = 0.0
 local rotateHeading = 0.0
 ---@type { x: number, y: number, w: number, h: number }? the UI window, as fractions of the screen
 local windowRect
+-- where the camera sits and how it is turned, for the backdrop quad
+local camState ---@type { coords: vector3, pitch: number, yaw: number, distance: number }?
 
 -- vertical field of view of the camera; wide enough that even long rifles sit close to the lens
 local CAMERA_FOV = 50.0
 -- share of the window the weapon spans
 local FILL = 0.7
+-- easing back to the gameplay camera on close; opening cuts, as the backdrop hides the world anyway
 local CAMERA_EASE = 300
+-- key light from the camera, so the weapon stays lit against the backdrop at night; 0 turns it off
+local LIGHT_INTENSITY = 1.0
+-- multiplies the backdrop's colour, to pull it back in line should the game's grading shift it
+local BACKDROP_TINT = { 255, 255, 255 }
+
+local BACKDROP_TXD = 'ox_inventory_inspect'
+local backdropDui ---@type number?
+local backdropTheme ---@type string?
+local backdropSize = { 0, 0 }
+local backdropTexture ---@type string?
+local backdropCount = 0
+local backdropTxd ---@type number? the runtime dictionary's handle, which textures are made in
+-- each draw loop runs only while its own inspection does
+local drawToken = 0
 
 -- Attachment slots: the component item type each takes and the weapon model bones it sits on
 -- (the first bone the model has wins). Finish has no bone; its pin goes on the weapon's centre.
@@ -182,6 +202,7 @@ local function deletePreview()
 	end
 
 	previewObject = 0
+	camState = nil
 	ClearFocus()
 end
 
@@ -248,6 +269,116 @@ local function aimCamera()
 	SetCamCoord(previewCam, camCoords.x, camCoords.y, camCoords.z)
 	SetCamRot(previewCam, pitch, 0.0, yaw, 2)
 	SetCamFov(previewCam, CAMERA_FOV)
+
+	camState = { coords = camCoords, pitch = pitch, yaw = yaw, distance = #delta }
+end
+
+local function uiStyle()
+	return GetResourceKvpString('uistyle') or client.uistyle
+end
+
+-- The backdrop DUI is made on the first inspection and kept for the next ones; it's remade only
+-- when the screen resolution changes, so it always maps onto the screen pixel for pixel.
+local function ensureBackdrop()
+	local theme = uiStyle()
+	local width, height = GetActiveScreenResolution()
+
+	if backdropDui and (backdropSize[1] ~= width or backdropSize[2] ~= height) then
+		DestroyDui(backdropDui)
+		backdropDui = nil
+		backdropTexture = nil
+	end
+
+	if backdropDui then
+		if theme ~= backdropTheme then
+			SendDuiMessage(backdropDui, json.encode({ uistyle = theme }))
+			backdropTheme = theme
+		end
+
+		return true
+	end
+
+	-- the NUI's own origin, so the page loads just as the inventory's does
+	backdropDui = CreateDui(('https://cfx-nui-%s/web/build/index.html#backdrop=%s'):format(cache.resource, theme), width, height)
+	backdropTheme = theme
+	backdropSize = { width, height }
+
+	local timeout = GetGameTimer() + 3000
+	while not IsDuiAvailable(backdropDui) and GetGameTimer() < timeout do
+		Wait(0)
+	end
+
+	if not IsDuiAvailable(backdropDui) then
+		DestroyDui(backdropDui)
+		backdropDui = nil
+		return false
+	end
+
+	backdropTxd = backdropTxd or CreateRuntimeTxd(BACKDROP_TXD)
+	backdropCount = backdropCount + 1
+	backdropTexture = ('backdrop%d'):format(backdropCount)
+	CreateRuntimeTextureFromDuiHandle(backdropTxd, backdropTexture, GetDuiHandle(backdropDui))
+
+	-- available means the browser is up, not that the page has painted yet
+	Wait(250)
+	return true
+end
+
+local function drawTriangle(a, b, c, uvA, uvB, uvC)
+	DrawSpritePoly(a.x, a.y, a.z, b.x, b.y, b.z, c.x, c.y, c.z,
+		BACKDROP_TINT[1], BACKDROP_TINT[2], BACKDROP_TINT[3], 255, BACKDROP_TXD, backdropTexture,
+		uvA[1], uvA[2], 1.0, uvB[1], uvB[2], 1.0, uvC[1], uvC[2], 1.0)
+end
+
+-- one frame of the backdrop quad and the key light
+local function drawBackdrop()
+	if not camState or previewObject == 0 then return end
+
+	local pitch, yaw = math.rad(camState.pitch), math.rad(camState.yaw)
+	local forward = vector3(-math.sin(yaw) * math.cos(pitch), math.cos(yaw) * math.cos(pitch), math.sin(pitch))
+	local right = vector3(math.cos(yaw), math.sin(yaw), 0.0)
+	local up = vector3(
+		right.y * forward.z - right.z * forward.y,
+		right.z * forward.x - right.x * forward.z,
+		right.x * forward.y - right.y * forward.x
+	)
+
+	if backdropTexture then
+		-- just past the weapon however it's turned, so nearby walls don't come between
+		local min, max = GetModelDimensions(GetEntityModel(previewObject))
+		local depth = camState.distance + #(max - min) / 2 + 0.1
+		local halfH = depth * math.tan(math.rad(CAMERA_FOV / 2))
+		local halfW = halfH * GetAspectRatio(false)
+		local centre = camState.coords + forward * depth
+
+		local tl = centre - right * halfW + up * halfH
+		local tr = centre + right * halfW + up * halfH
+		local bl = centre - right * halfW - up * halfH
+		local br = centre + right * halfW - up * halfH
+
+		-- both windings, as a poly only shows from one side
+		drawTriangle(tl, tr, br, { 0.0, 0.0 }, { 1.0, 0.0 }, { 1.0, 1.0 })
+		drawTriangle(tl, br, bl, { 0.0, 0.0 }, { 1.0, 1.0 }, { 0.0, 1.0 })
+		drawTriangle(tl, br, tr, { 0.0, 0.0 }, { 1.0, 1.0 }, { 1.0, 0.0 })
+		drawTriangle(tl, bl, br, { 0.0, 0.0 }, { 0.0, 1.0 }, { 1.0, 1.0 })
+	end
+
+	if LIGHT_INTENSITY > 0 then
+		local light = camState.coords + up * 0.3
+		DrawLightWithRange(light.x, light.y, light.z, 255, 255, 255, camState.distance + 0.5, LIGHT_INTENSITY)
+	end
+end
+
+local function startDrawing()
+	drawToken = drawToken + 1
+	local token = drawToken
+
+	CreateThread(function()
+		while token == drawToken do
+			drawBackdrop()
+			Wait(0)
+		end
+	end)
 end
 
 local function spawnPreview(weaponHash, metadata)
@@ -269,7 +400,7 @@ local function spawnPreview(weaponHash, metadata)
 	previewCam = CreateCam('DEFAULT_SCRIPTED_CAMERA', true)
 	aimCamera()
 	SetCamActive(previewCam, true)
-	RenderScriptCams(true, true, CAMERA_EASE, true, true)
+	RenderScriptCams(true, false, 0, true, true)
 
 	return true
 end
@@ -345,13 +476,18 @@ function Inspect.open(slot, rect, equippedSlot)
 	activeSlot = slot
 	inspecting = true
 
+	-- without the backdrop the window still works, it just shows the world behind the weapon
+	ensureBackdrop()
+	if not inspecting then return end
+
 	if not spawnPreview(data.hash, item.metadata or {}) then
 		Inspect.close(true)
 		return
 	end
 
+	startDrawing()
 	Utils.blurOut()
-	sendPinsSoon(CAMERA_EASE + 50)
+	sendPinsSoon(50)
 
 	return state
 end
@@ -363,6 +499,7 @@ function Inspect.close(keepBlur)
 	inspecting = false
 	activeSlot = nil
 	windowRect = nil
+	drawToken = drawToken + 1
 	deletePreview()
 
 	if not keepBlur and client.screenblur then Utils.blurIn() end
@@ -370,6 +507,14 @@ end
 
 function Inspect.isOpen()
 	return inspecting
+end
+
+-- the player switched theme: the backdrop follows, even mid-inspection
+function Inspect.setUiStyle(style)
+	if backdropDui and style ~= backdropTheme then
+		SendDuiMessage(backdropDui, json.encode({ uistyle = style }))
+		backdropTheme = style
+	end
 end
 
 RegisterNUICallback('inspectClose', function(_, cb)
@@ -444,6 +589,7 @@ end)
 AddEventHandler('onResourceStop', function(resource)
 	if resource == cache.resource then
 		Inspect.close(true)
+		if backdropDui then DestroyDui(backdropDui) end
 	end
 end)
 

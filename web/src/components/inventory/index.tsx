@@ -18,7 +18,7 @@ import { closeContextMenu } from '../../store/contextMenu';
 import Fade from '../utils/transitions/Fade';
 import { InventoryKeyHints, InventoryToolbar } from './InventoryChrome';
 import { playSound } from '../../utils/sound';
-import WeaponInspect, { InspectPins, InspectWindow } from './WeaponInspect';
+import WeaponInspect, { InspectPins } from './WeaponInspect';
 import { endInspect } from '../../store/inspect';
 
 const Inventory: React.FC = () => {
@@ -81,7 +81,6 @@ const Inventory: React.FC = () => {
       <Fade in={inventoryVisible}>
         <div className="inventory-wrapper" data-inspecting={inspecting}>
           <div className="inventory-backdrop" style={backdropStyle} />
-          {inspecting && <InspectWindow />}
           <InventoryToolbar />
           <div className="inventory-columns">
             <div className="inventory-column inventory-column-left">

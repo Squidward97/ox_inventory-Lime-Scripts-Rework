@@ -1714,6 +1714,7 @@ local uiStyles = { tactical = true, glass = true, minimal = true, midnight = tru
 RegisterNUICallback('setUiStyle', function(style, cb)
 	if uiStyles[style] then
 		SetResourceKvp('uistyle', style)
+		WeaponInspect.setUiStyle(style)
 	end
 
 	cb(1)

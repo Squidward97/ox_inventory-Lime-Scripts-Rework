@@ -24,14 +24,26 @@ import './styles/outline.scss';
 import './styles/motion.scss';
 import { ItemNotificationsProvider } from './components/utils/ItemNotifications';
 import { isEnvBrowser } from './utils/misc';
-import { applyUiStyle, previewUiStyle } from './utils/uistyle';
+import { applyUiStyle, isUiStyle, previewUiStyle } from './utils/uistyle';
 
 const root = document.getElementById('root');
 
 // guide tiles by default until the client sends inventory:uistyle
 document.documentElement.dataset.uistyle = 'tactical';
 
-if (isEnvBrowser()) {
+// #backdrop=<theme>: the page as a DUI behind the inspected weapon (modules/weapon/inspect.lua),
+// showing only the inventory backdrop as it looks while inspecting, so the inspect window matches it
+const backdropTheme = new URLSearchParams(window.location.hash.slice(1)).get('backdrop');
+
+if (backdropTheme !== null) {
+  if (isUiStyle(backdropTheme)) applyUiStyle(backdropTheme);
+
+  // the client sends { uistyle } when the player switches theme
+  window.addEventListener('message', (event) => {
+    const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+    if (isUiStyle(data?.uistyle)) applyUiStyle(data.uistyle);
+  });
+} else if (isEnvBrowser()) {
   // the preview opens on its last picked theme (glass at first); ?uistyle= overrides it
   applyUiStyle(previewUiStyle());
 
@@ -54,13 +66,19 @@ if (isEnvBrowser()) {
 }
 
 createRoot(root!).render(
-  <React.StrictMode>
-    <Provider store={store}>
-      <DndProvider backend={TouchBackend} options={{ enableMouseEvents: true }}>
-        <ItemNotificationsProvider>
-          <App />
-        </ItemNotificationsProvider>
-      </DndProvider>
-    </Provider>
-  </React.StrictMode>
+  backdropTheme !== null ? (
+    <div className="inventory-wrapper" data-inspecting="true">
+      <div className="inventory-backdrop" />
+    </div>
+  ) : (
+    <React.StrictMode>
+      <Provider store={store}>
+        <DndProvider backend={TouchBackend} options={{ enableMouseEvents: true }}>
+          <ItemNotificationsProvider>
+            <App />
+          </ItemNotificationsProvider>
+        </DndProvider>
+      </Provider>
+    </React.StrictMode>
+  )
 );

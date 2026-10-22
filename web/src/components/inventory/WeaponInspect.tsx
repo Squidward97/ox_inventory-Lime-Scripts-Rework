@@ -317,19 +317,6 @@ const WeaponInspect: React.FC = () => {
   );
 };
 
-/** Darkens the screen everywhere except the inspect window, where the game shows through */
-export const InspectWindow: React.FC = () => {
-  const rect = useAppSelector((state) => state.inspect.window);
-  if (!rect) return null;
-
-  return (
-    <div
-      className="inspect-window"
-      style={{ left: rect.left, top: rect.top, width: rect.width, height: rect.height }}
-    />
-  );
-};
-
 /** Labels pinned on the weapon's attachment points, positioned in screen space */
 export const InspectPins: React.FC = () => {
   const dispatch = useAppDispatch();
