@@ -1,6 +1,6 @@
 <div align="center">
 
-# Free Inventory
+# Ox Inventory Rework by Lime Scripts
 
 A fork of [ox_inventory](https://github.com/overextended/ox_inventory) with equipment slots, backpacks, armour plates, 3D item inspection, a shop cart with card payments and five interface themes. It is free and fully open source under GPL-3.0.
 
@@ -9,6 +9,8 @@ A fork of [ox_inventory](https://github.com/overextended/ox_inventory) with equi
 See [pitch.md](./pitch.md) for what this fork adds and [README-backpack-utility.md](./README-backpack-utility.md) for configuration and the full list of changes.\
 Refer to [CONTRIBUTING.md](./CONTRIBUTING.md) for contribution guidelines and to see our Contributor License Agreement.\
 Refer to [NOTICE.md](./NOTICE.md) for additional information and legal notices.
+
+https://www.youtube.com/watch?v=MO2mnLA7IQM
 
 </div>
 
