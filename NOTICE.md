@@ -20,7 +20,7 @@ If this project has been useful to you, please [consider sponsoring its continue
 
 ## Modifications
 
-This is a modified version of ox_inventory 2.47.9, distributed at https://github.com/ValvisMarios/ox_inventory-Lime-Scripts-Rework under the same GPL‑3.0-or-later license. The changes from the original are:
+This is a modified version of ox_inventory 2.47.9, distributed at https://github.com/Squidward97/ox_inventory-Lime-Scripts-Rework under the same GPL‑3.0-or-later license. The changes from the original are:
 
 - Utility and equipment slots, a backpack system with stash-backed bags, worn clothing for gear, and armour plates (`modules/utility/*`, plus changes to the inventory, items, shops and server modules)
 - 3D inspection of weapons and items (`modules/weapon/inspect.lua`)

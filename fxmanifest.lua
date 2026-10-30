@@ -5,7 +5,6 @@ game 'gta5'
 name 'ox_inventory'
 author 'Overextended'
 version '2.47.9'
-repository 'https://github.com/ValvisMarios/ox_inventory-Lime-Scripts-Rework'
 description 'Slot-based inventory with item metadata support'
 
 dependencies {

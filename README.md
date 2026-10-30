@@ -4,7 +4,7 @@
 
 A fork of [ox_inventory](https://github.com/overextended/ox_inventory) with equipment slots, backpacks, armour plates, 3D item inspection, a shop cart with card payments and five interface themes. It is free and fully open source under GPL-3.0.
 
-[![](https://img.shields.io/github/v/release/ValvisMarios/ox_inventory-Lime-Scripts-Rework?style=for-the-badge&logo=github)](https://github.com/ValvisMarios/ox_inventory-Lime-Scripts-Rework/releases/latest/)
+[![](https://img.shields.io/github/v/release/Squidward97/ox_inventory-Lime-Scripts-Rework?style=for-the-badge&logo=github)](https://github.com/Squidward97/ox_inventory-Lime-Scripts-Rework/releases/latest/)
 
 See [pitch.md](./pitch.md) for what this fork adds and [README-backpack-utility.md](./README-backpack-utility.md) for configuration and the full list of changes.\
 Refer to [CONTRIBUTING.md](./CONTRIBUTING.md) for contribution guidelines and to see our Contributor License Agreement.\
@@ -19,7 +19,7 @@ Refer to [NOTICE.md](./NOTICE.md) for additional information and legal notices.
 
 ## 💾 Download
 
-https://github.com/ValvisMarios/ox_inventory-Lime-Scripts-Rework/releases/latest/download/ox_inventory.zip
+https://github.com/Squidward97/ox_inventory-Lime-Scripts-Rework/releases/latest/download/ox_inventory.zip
 
 Keep the resource folder named `ox_inventory`, since other resources depend on that name.
 
