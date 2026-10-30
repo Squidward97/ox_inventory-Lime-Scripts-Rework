@@ -1,16 +1,12 @@
 <div align="center">
 
-# ox_inventory
+# Free Inventory
 
-A complete and modern inventory system for FiveM, providing a flexible slot-based inventory with support for shops, stashes, crafting, and vehicle storage.
+A fork of [ox_inventory](https://github.com/overextended/ox_inventory) with equipment slots, backpacks, armour plates, 3D item inspection, a shop cart with card payments and five interface themes. It is free and fully open source under GPL-3.0.
 
-[![](https://img.shields.io/github/downloads/overextended/ox_inventory/total?style=for-the-badge&logo=github)](https://github.com/overextended/ox_inventory/releases/latest/download/ox_inventory.zip)
-[![](https://img.shields.io/github/downloads/overextended/ox_inventory/latest/total?style=for-the-badge&logo=github)](https://github.com/overextended/ox_inventory/releases/latest/download/ox_inventory.zip)
-[![](https://img.shields.io/github/v/release/overextended/ox_inventory?style=for-the-badge&logo=github)](https://github.com/overextended/ox_inventory/releases/latest/)\
-[![](https://badges.5metrics.dev/ox_inventory/serverRank.svg?style=for-the-badge)](https://5metrics.dev/resource/ox_inventory)
-[![](https://badges.5metrics.dev/ox_inventory/servers.svg?style=for-the-badge)](https://5metrics.dev/resource/ox_inventory)
-[![](https://badges.5metrics.dev/ox_inventory/players.svg?style=for-the-badge)](https://5metrics.dev/resource/ox_inventory)
+[![](https://img.shields.io/github/v/release/ValvisMarios/ox_inventory-Lime-Scripts-Rework?style=for-the-badge&logo=github)](https://github.com/ValvisMarios/ox_inventory-Lime-Scripts-Rework/releases/latest/)
 
+See [pitch.md](./pitch.md) for what this fork adds and [README-backpack-utility.md](./README-backpack-utility.md) for configuration and the full list of changes.\
 Refer to [CONTRIBUTING.md](./CONTRIBUTING.md) for contribution guidelines and to see our Contributor License Agreement.\
 Refer to [NOTICE.md](./NOTICE.md) for additional information and legal notices.
 
@@ -18,11 +14,14 @@ Refer to [NOTICE.md](./NOTICE.md) for additional information and legal notices.
 
 ## 📚 Documentation
 
-https://overextended.dev/docs/ox_inventory
+- This fork: [README-backpack-utility.md](./README-backpack-utility.md)
+- Everything else (exports, hooks, items, shops, stashes): https://overextended.dev/docs/ox_inventory
 
 ## 💾 Download
 
-https://github.com/overextended/ox_inventory/releases/latest/download/ox_inventory.zip
+https://github.com/ValvisMarios/ox_inventory-Lime-Scripts-Rework/releases/latest/download/ox_inventory.zip
+
+Keep the resource folder named `ox_inventory`, since other resources depend on that name.
 
 ## Supported frameworks
 

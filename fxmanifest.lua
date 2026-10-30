@@ -5,7 +5,7 @@ game 'gta5'
 name 'ox_inventory'
 author 'Overextended'
 version '2.47.9'
-repository 'https://github.com/overextended/ox_inventory'
+repository 'https://github.com/ValvisMarios/ox_inventory-Lime-Scripts-Rework'
 description 'Slot-based inventory with item metadata support'
 
 dependencies {
@@ -47,4 +47,14 @@ files {
     'modules/weapon/inspect.lua',
     'modules/bridge/**/client.lua',
     'data/*.lua',
+}
+
+-- GPL-3.0: nothing is encrypted by the asset escrow, every script ships as readable source
+escrow_ignore {
+    '*.lua',
+    'data/*.lua',
+    'setup/*.lua',
+    'modules/*.lua',
+    'modules/*/*.lua',
+    'modules/*/*/*.lua',
 }

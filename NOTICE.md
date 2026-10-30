@@ -18,6 +18,19 @@ If this project has been useful to you, please [consider sponsoring its continue
 
 ---
 
+## Modifications
+
+This is a modified version of ox_inventory 2.47.9, distributed at https://github.com/ValvisMarios/ox_inventory-Lime-Scripts-Rework under the same GPL‑3.0-or-later license. The changes from the original are:
+
+- Utility and equipment slots, a backpack system with stash-backed bags, worn clothing for gear, and armour plates (`modules/utility/*`, plus changes to the inventory, items, shops and server modules)
+- 3D inspection of weapons and items (`modules/weapon/inspect.lua`)
+- A shop cart with card payments and bank functions in the ESX, QBX and ND bridges
+- A redesigned web UI: five themes, card-based crafting and shops, item search, filters and favourites, a new context menu, motion and synthesized sounds (`web/src`)
+
+Every change to a stock function is listed in [README-backpack-utility.md](./README-backpack-utility.md).
+
+---
+
 ## Frequently asked questions
 
 ### Can I redistribute modified versions of this project?

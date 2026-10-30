@@ -1,6 +1,8 @@
 # Backpack & Utility Slots for ox_inventory
 
-Adds three features on top of stock ox_inventory (v2.47.9):
+Adds these features on top of stock ox_inventory (v2.47.9). For an overview, see
+[pitch.md](./pitch.md). Themes, sounds, item inspection and the shop cart are covered
+under **Configuration** below.
 
 1. **Utility / equipment slots** — a middle panel between the left and right
    inventories with configurable, restricted slots (backpack, phone, radio, armor,
