@@ -11,7 +11,7 @@ Refer to [CONTRIBUTING.md](./CONTRIBUTING.md) for contribution guidelines and to
 Refer to [NOTICE.md](./NOTICE.md) for additional information and legal notices.
 
 
-(Preview)[https://www.youtube.com/watch?v=MO2mnLA7IQM]
+**Preview:** https://www.youtube.com/watch?v=MO2mnLA7IQM
 
 </div>
 
