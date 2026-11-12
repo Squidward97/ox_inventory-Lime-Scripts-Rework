@@ -10,6 +10,8 @@ your own health on the inventory screen.
 
 **Based on:** ox_inventory 2.48.1 and the Lime Scripts rework as of 30 October 2026.
 
+**Status:** running on DelPerroSands since 12 November 2026.
+
 > The resource folder must be named `ox_inventory`. Other resources call it by that name
 > (`exports.ox_inventory`, its events, its image path). `DPS Inventory` is the name of this
 > project, not of the folder.
@@ -82,6 +84,7 @@ Kept short on purpose, so updates stay easy. Every change is one of these:
 | `web/src/index.scss`, `web/src/styles/outline.scss` | Styles for the status panel. |
 | `modules/items/server.lua` | A bag that was a stock container keeps its contents when it becomes a backpack. |
 | `tools/categorise.py`, `tools/shrink_images.py` | New. Item list and picture tools. |
+| `setup/delperrosands.example.cfg` | New. The settings DelPerroSands runs with. |
 | `init.lua` | The default theme is `delperro`. |
 | `locales/en.json` | Strings for the theme and the status panel. |
 | `fxmanifest.lua` | Version, repository link and description. |
@@ -150,6 +153,29 @@ setr inventory:carditem ""
 setr inventory:statuspanel 1
 setr inventory:statusrefresh 1000
 ```
+
+A complete working example, with a slot layout for phone, ID and keys, radio and vest, is in
+[setup/delperrosands.example.cfg](./setup/delperrosands.example.cfg).
+
+## Moving a live server onto it
+
+This is the order used on DelPerroSands. Stock ox_inventory was running before.
+
+1. Copy the running `ox_inventory` folder somewhere safe. Dump the `ox_inventory` table and your
+   framework's player table, which holds each player's items.
+2. Build this project in a separate folder (see Install).
+3. Copy your `data/` files over the examples. If you changed `client.lua` or
+   `modules/items/containers.lua` on your server, carry those edits across by hand.
+4. Copy your `web/images` in. Keep the rework's own pictures as well.
+5. Add the settings to `ox.cfg`. Utility slots are added after your pocket slots, so saved
+   inventories do not move.
+6. Swap the folder and restart the whole server, not just the resource.
+7. Check that `modules/status/client.lua` and `web/build/` are in the folder you swapped in. A
+   copy command that skips files named `client.lua` will leave the status panel out, and the
+   inventory then fails to load for players without any server error.
+8. Tell your players: keys 1 to 5 now use the quick slots, and a vest is worn, not used.
+
+To go back: stop the server, restore the folder, restore the two tables, start the server.
 
 ## The status panel
 
