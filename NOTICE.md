@@ -29,6 +29,17 @@ This is a modified version of ox_inventory 2.47.9, distributed at https://github
 
 Every change to a stock function is listed in [README-backpack-utility.md](./README-backpack-utility.md).
 
+### DPS Inventory
+
+This copy is a further modified version, distributed at https://github.com/DaemonAlex/dps-inventory under the same GPL-3.0-or-later license. It starts from the Lime Scripts rework above (as of 30 October 2026) and changes the following:
+
+- A sixth web UI theme, `delperro` (`web/src/styles/delperro.scss`), registered in `web/src/main.tsx`, `web/src/utils/uistyle.ts`, `web/src/components/inventory/InventoryChrome.tsx`, `client.lua` and `locales/en.json`, and made the default in `init.lua`. Modified by DelPerroSands, November 2026.
+- The changes of ox_inventory 2.48.0 and 2.48.1 applied on top of the rework's 2.47.9 base (12 files, unchanged from upstream). Copyright of those changes remains with the ox_inventory authors.
+- `fxmanifest.lua`: version, repository link and description.
+- Documentation: `README.md` rewritten, `UPDATING.md` added, this section added.
+
+Credit for the inventory belongs to the ox_inventory authors named at the top of this file. Credit for the equipment slots, backpacks, armour plates, 3D inspection, shop cart and redesigned interface belongs to Lime Scripts (Squidward97) and contributors.
+
 ---
 
 ## Frequently asked questions

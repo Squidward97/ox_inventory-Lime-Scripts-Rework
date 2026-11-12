@@ -21,6 +21,7 @@ import './styles/glass.scss';
 import './styles/minimal.scss';
 import './styles/midnight.scss';
 import './styles/outline.scss';
+import './styles/delperro.scss';
 import './styles/motion.scss';
 import { ItemNotificationsProvider } from './components/utils/ItemNotifications';
 import { isEnvBrowser } from './utils/misc';

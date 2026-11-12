@@ -5,7 +5,7 @@ import { isEnvBrowser } from './misc';
 // settings; the choice is kept per player by the client (resource KVP), or in localStorage in
 // the browser preview.
 
-export const UI_STYLES = ['tactical', 'glass', 'minimal', 'midnight', 'outline'] as const;
+export const UI_STYLES = ['delperro', 'tactical', 'glass', 'minimal', 'midnight', 'outline'] as const;
 export type UiStyle = (typeof UI_STYLES)[number];
 
 const PREVIEW_KEY = 'inventory:uistyle';

@@ -200,6 +200,8 @@
   "ui_range": "Range",
   "ui_settings": "Settings",
   "ui_theme": "Theme",
+  "ui_theme_delperro": "DelPerroSands",
+  "ui_theme_delperro_hint": "Navy panels, one orange outline",
   "ui_theme_tactical": "Tactical",
   "ui_theme_tactical_hint": "Graphite HUD, sharp and angled",
   "ui_theme_glass": "Glass",

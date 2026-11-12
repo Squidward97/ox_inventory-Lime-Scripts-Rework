@@ -96,8 +96,8 @@ else
         player = lib.player:new(-1),
         autoreload = GetConvarBool('inventory:autoreload', false),
         screenblur = GetConvarBool('inventory:screenblur', true),
-        -- default NUI theme: 'tactical', 'glass', 'minimal', 'midnight' or 'outline'; players can switch from the UI settings
-        uistyle = GetConvar('inventory:uistyle', 'tactical'),
+        -- default NUI theme: 'delperro', 'tactical', 'glass', 'minimal', 'midnight' or 'outline'; players can switch from the UI settings
+        uistyle = GetConvar('inventory:uistyle', 'delperro'),
         -- NUI sound volume, 0 to 1 (0 turns the UI sounds off)
         uisound = tonumber(GetConvar('inventory:uisound', '0.5')) or 0.5,
         keys = json.decode(GetConvar('inventory:keys', '')) or { 'F2', 'K', 'TAB' },
@@ -115,7 +115,8 @@ else
         suppresspickups = GetConvarBool('inventory:suppresspickups', true),
         disableweapons = GetConvarBool('inventory:disableweapons', false),
         disablesetupnotification = GetConvarBool('inventory:disablesetupnotification', false),
-        enablestealcommand = GetConvarBool('inventory:enablestealcommand', true)
+        enablestealcommand = GetConvarBool('inventory:enablestealcommand', true),
+        gloveboxseatrestriction = GetConvarInt('inventory:gloveboxseatrestriction', 0) == 1
     }
 
     local ignoreweapons = table.create(0, (client.ignoreweapons and #client.ignoreweapons or 0) + 3)

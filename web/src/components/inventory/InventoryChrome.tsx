@@ -25,6 +25,11 @@ const THEMES: Array<{ id: UiStyle; label: () => string; description: () => strin
     description: () => Locale.ui_theme_tactical_hint || 'Graphite HUD, sharp and angled',
   },
   {
+    id: 'delperro',
+    label: () => Locale.ui_theme_delperro || 'DelPerroSands',
+    description: () => Locale.ui_theme_delperro_hint || 'Navy panels, one orange outline',
+  },
+  {
     id: 'glass',
     label: () => Locale.ui_theme_glass || 'Glass',
     description: () => Locale.ui_theme_glass_hint || 'Translucent, soft and rounded',

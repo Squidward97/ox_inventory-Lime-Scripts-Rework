@@ -4,8 +4,9 @@ lua54 'yes'
 game 'gta5'
 name 'ox_inventory'
 author 'Overextended'
-version '2.47.9'
-description 'Slot-based inventory with item metadata support'
+version '2.48.1'
+repository 'https://github.com/DaemonAlex/dps-inventory'
+description 'DPS Inventory: ox_inventory (Overextended) with the Lime Scripts rework and the DelPerroSands theme'
 
 dependencies {
     '/server:6116',

@@ -1,0 +1,291 @@
+@use 'tokens' as *;
+@use 'upright' as *;
+
+// inventory:uistyle "delperro": the DelPerroSands look. Navy panels, one orange outline, cream
+// text. Orange is kept for the outline, the hovered slot, the active control and the main
+// button; nothing glows. Square corners throughout. Built on the shared upright structure
+// (see _upright.scss), starting from the midnight theme.
+// Palette: navy #0e1a2b / #152539 / #1b2e45, line #2b4057, cream #f2ead9, orange #ff7a45.
+
+// navy 14 26 43, navy2 21 37 57, navy3 27 46 69 (written out below: Sass will not take a list inside rgb())
+$line: #2b4057;
+$cream: #f2ead9;
+$dim: #a8b8c9;
+$ink: #1b1206;
+
+$floatFill: rgb(14 26 43 / 0.97);
+$rim: $line;
+$rimStrong: rgb(var(--accent) / 0.9);
+$control: rgb(21 37 57 / 0.9);
+$controlHover: rgb(27 46 69 / 0.95);
+$well: rgb(21 37 57 / 0.9);
+$price: #ffb08a;
+
+@mixin primary {
+  color: $ink;
+  background: rgb(var(--accent));
+  box-shadow: none;
+}
+
+@mixin float {
+  background: $floatFill;
+  box-shadow:
+    inset 0 0 0 2px $rimStrong,
+    0 r(20) r(50) rgb(0 0 0 / 0.5);
+}
+
+:root[data-uistyle='delperro'] {
+  // the theme's own accent: DelPerroSands orange in place of lime
+  --accent: 255 122 69;
+  --drop: 255 122 69;
+  color: $cream;
+
+  @include upright($radius: r(2), $radiusCard: r(2), $radiusControl: r(2));
+  @include glossy-bars;
+
+  // A plain dark navy wash behind the columns: no sky, no stars, no glow.
+  .inventory-backdrop {
+    background: linear-gradient(180deg, rgb(8 15 26 / 0.82) 0%, rgb(6 12 21 / 0.88) 100%);
+    box-shadow: inset 0 0 r(240) r(60) rgb(3 7 13 / 0.6);
+
+    &::before {
+      display: none;
+    }
+  }
+
+  // The look's signature: each column is a navy panel with one orange outline.
+  // Drawn as two rings outside the box (navy fill, then the orange line) so the panel keeps the
+  // exact size the shared layout gives it: padding here would push the columns out of line.
+  .inventory-grid-wrapper,
+  .player-utility-wrapper {
+    background: rgb(14 26 43 / 0.93);
+    box-shadow:
+      0 0 0 r(11) rgb(14 26 43 / 0.93),
+      0 0 0 calc(#{r(11)} + 2px) rgb(var(--accent));
+  }
+
+  .section-header .section-title,
+  .drawer-title {
+    color: $cream;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .hint,
+  .field-label,
+  .item-slot-label {
+    color: $dim;
+  }
+
+  // ------------------------------------------------------------ type
+
+  .section-header .section-title,
+  .drawer-title,
+  .item-card-name,
+  .tooltip-name {
+    font-family: $display;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+  }
+
+  .eyebrow::before {
+    box-shadow: none;
+  }
+
+  // ------------------------------------------------------------ controls
+
+  .keycap {
+    color: $ink;
+    background: rgb(var(--accent));
+    box-shadow: none;
+  }
+
+  .tab {
+    background: $control;
+    box-shadow: inset 0 0 0 1px $rim;
+
+    &:hover {
+      background: $controlHover;
+    }
+  }
+
+  .tab-active,
+  .tab-active:hover {
+    @include primary;
+  }
+
+  .field {
+    background: $well;
+    box-shadow: inset 0 0 0 1px $line;
+
+    &:focus {
+      box-shadow: inset 0 0 0 1px rgb(var(--accent) / 0.6);
+    }
+  }
+
+  .toolbar-search {
+    background: $well;
+    box-shadow: inset 0 0 0 1px $rim;
+
+    &:focus-within {
+      box-shadow: inset 0 0 0 1px rgb(var(--accent) / 0.6);
+    }
+  }
+
+  .toolbar-button {
+    background: $control;
+    box-shadow: inset 0 0 0 1px $rim;
+
+    &:hover {
+      background: $controlHover;
+    }
+
+    &[data-active='true'] {
+      @include primary;
+    }
+  }
+
+  // ------------------------------------------------------------ slots
+
+  // a flat navy tile with a thin line; orange only when hovered or dropped on
+  .inventory-slot {
+    border: 1px solid $line;
+    border-radius: 0;
+    background-color: rgb(21 37 57 / 0.9);
+    background-image: none;
+    box-shadow: none;
+    transition:
+      border-color 120ms ease-out,
+      box-shadow 120ms ease-out,
+      background-color 120ms ease-out,
+      opacity 150ms ease-out;
+
+    &[data-filled='true'] {
+      background-color: rgb(27 46 69 / 0.92);
+      background-image: none;
+      border-color: $line;
+    }
+
+    &[data-filled='true']:hover {
+      border-color: rgb(var(--accent));
+      box-shadow: inset 0 0 0 1px rgb(var(--accent));
+    }
+
+    &[data-over='true'] {
+      background-color: rgb(var(--drop) / 0.14);
+      border-color: rgb(var(--drop));
+    }
+  }
+
+  // uncommon and up: a thin tint in the rarity colour, no glow
+  .inventory-slot[data-filled='true'][data-rarity]:not([data-rarity='common']) {
+    background-image: linear-gradient(180deg, rgb(var(--rarity-rgb) / 0.16), transparent 60%);
+    box-shadow: none;
+  }
+
+  // rarity: a small glowing dot in the corner
+  .inventory-slot[data-filled='true']::after {
+    left: r(8);
+    bottom: r(8);
+    width: r(6);
+    height: r(6);
+    border-radius: 0;
+    background: var(--rarity);
+    box-shadow: none;
+  }
+
+  .inventory-slot[data-filled='true'][data-rarity='common']::after {
+    opacity: 0.35;
+    box-shadow: none;
+  }
+
+  .body-svg-tooltip {
+    @include float;
+  }
+
+  // ------------------------------------------------------------ actions
+
+  .inventory-control .drop-action {
+    background: $control;
+    box-shadow: inset 0 0 0 1px $rim;
+
+    &[data-over='true'] {
+      @include primary;
+    }
+  }
+
+  body.inv-dragging .drop-action {
+    background: rgb(var(--accent) / 0.1);
+    box-shadow: inset 0 0 0 1px rgb(var(--accent) / 0.4);
+  }
+
+  // ------------------------------------------------------------ cards (crafting, shop)
+
+  .item-card {
+    border: 1px solid $line;
+    background: rgb(21 37 57 / 0.9);
+    box-shadow: none;
+
+    &:hover {
+      border-color: rgb(var(--accent));
+      background: rgb(27 46 69 / 0.95);
+    }
+  }
+
+  .card-stepper {
+    background: $well;
+    box-shadow: inset 0 0 0 1px $rim;
+  }
+
+  // spelled out: a nested `.item-card &` here would put .item-card above :root and never match
+  .item-card[data-craftable='true'] .card-action,
+  .item-card[data-available='true'] .card-action {
+    @include primary;
+  }
+
+  .shop-price {
+    font-family: $display;
+    font-weight: 700;
+
+    // dirty money keeps its red
+    &:not([data-currency='black_money']) {
+      color: $price;
+    }
+  }
+
+  .shop-checkout {
+    border: 2px solid rgb(var(--accent));
+    background: rgb(14 26 43 / 0.95);
+    box-shadow: none;
+  }
+
+  .shop-methods .tab[data-active='true'] {
+    color: $cream;
+    background: rgb(var(--accent) / 0.16);
+    box-shadow: inset 0 0 0 1px rgb(var(--accent));
+  }
+
+  .shop-pay[data-ready='true'] {
+    @include primary;
+  }
+
+  // ------------------------------------------------------------ tooltip and menus
+
+  .tooltip-wrapper {
+    @include float;
+
+    &:not([data-rarity='common']) {
+      background:
+        radial-gradient(ellipse 90% 60% at 0% 0%, rgb(var(--rarity-rgb) / 0.2), transparent 70%),
+        $floatFill;
+    }
+  }
+
+  .context-menu-list {
+    @include float;
+  }
+
+  .settings-popover {
+    background: $floatFill;
+  }
+}
