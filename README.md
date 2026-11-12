@@ -16,6 +16,15 @@ your own health on the inventory screen.
 > (`exports.ox_inventory`, its events, its image path). `DPS Inventory` is the name of this
 > project, not of the folder.
 
+## What it is for
+
+One inventory screen that also tells a player how their character is doing. Items, worn gear, a
+bag, quick slots, a shop cart, and under the body figure: health, food, water, stress and
+injuries. A player should not need a separate HUD or a typed command to know they are bleeding.
+
+It is a drop-in for ox_inventory. Every export, event, hook and item definition that works with
+ox_inventory 2.48.1 works here, so scripts written for ox_inventory need no changes.
+
 ## Credits
 
 This project exists because of other people's work. All of it is theirs unless listed under
@@ -255,6 +264,73 @@ The colours are at the top of `web/src/styles/delperro.scss`:
 
 To change the look, edit that file and build again. To preview a theme in a browser without the
 game, run `npm start` in `web/` and open the page with `?uistyle=delperro`.
+
+## On its own, and with other scripts
+
+**On its own.** With only a framework, `ox_lib` and `oxmysql`, you get the whole inventory:
+equipment slots, backpacks, armour plates, quick slots, the shop cart, 3D inspection and the
+themes. The status panel shows health, armour and air on any framework, and food, water and
+stress on Qbox. Nothing else needs to be bought or installed.
+
+**With a paid ambulance script.** With wasabi_ambulance running, the status panel becomes a
+medical read-out. A gunshot to the leg turns that leg red on the body figure and the list says
+"Left leg: gunshot". Bleeding shows as light, moderate or heavy. A player knows why they are
+limping and what to tell the medic, without a command or a second HUD. The inventory only reads
+what the ambulance script already announces. It changes nothing in it, so updates to the paid
+script do not break anything here.
+
+**With dps-medical on top.** Illness joins injury. A player with flu sees "Fever" and "Cough" on
+the same panel, and "Diagnosed: Flu" once a medic has confirmed it. Only what the character would
+know is shown, so the medic still has a job to do.
+
+**With a paid police script.** Vests and plates give officers a real loadout step. The armoury
+sells plates, the vest is worn in its own slot, and plates wear down under fire.
+
+**With your own scripts.** Any resource can add a line to the status panel with one export:
+drunk, hungover, radiation, a broken tool, a wanted level. See "The status panel".
+
+## Works with
+
+| Resource | How |
+|---|---|
+| Anything written for ox_inventory | Unchanged. Same resource name, exports, events and hooks. |
+| ox_core, ESX, Qbox, ND Core | The stock ox_inventory bridges, untouched. |
+| qbx_core | Food, water and stress meters, read from its player statebags. |
+| wasabi_ambulance | Limb injuries, bleeding, dazed, critically hurt and unconscious, read from its client events and the `wasabi:deathState` statebag. Nothing is written back. |
+| [dps-medical](https://github.com/DaemonAlex/dps-medical) | Adds symptoms and diagnoses to the status panel through `setStatusLines`. |
+| dps-bags | Shows the worn bag on the character's back. Set `inventory:utilityclothing {}` so the two do not both dress the character. |
+| Any other resource | Add lines to the status panel with the `setStatusLines` export. See "The status panel". |
+
+Not compatible: scripts written for qs-inventory, qb-inventory or another inventory, unless they
+also support ox_inventory.
+
+## Other DPS scripts
+
+All of these are made for DelPerroSands and run together on one Qbox server. Each one works on
+its own. The ones marked "pairs with" do more when both are running.
+
+| Script | What it does |
+|---|---|
+| [dps-medical](https://github.com/DaemonAlex/dps-medical) | Patient records, illness and diagnostic tests. A companion to wasabi_ambulance. Pairs with dps-inventory: symptoms and diagnoses show on the status panel. |
+| [dps-insurance](https://github.com/DaemonAlex/dps-insurance) | Ties m-Insurance into the MDT, impound, hospital and medical chart. Pairs with dps-medical. |
+| [dps-studio](https://github.com/DaemonAlex/dps-studio) | Build rooms, doors and portals in game from one panel (`/studio`), with owners and managers so staff do not have to support them. |
+| [dps-shops](https://github.com/DaemonAlex/dps-shops) | Shop clerks who greet and react to a robbery, then player-owned shops. |
+| [dps-fleet](https://github.com/DaemonAlex/dps-fleet) | Vehicle browser and workshop on one panel: extras, liveries and mods for emergency vehicles. |
+| [dps-parking](https://github.com/DaemonAlex/dps-parking) | Parking with valet, impound, violations and reserved spots. |
+| [dps-vehiclepersistence](https://github.com/DaemonAlex/dps-vehiclepersistence) | Vehicles stay where they were parked. Pairs with dps-parking. |
+| [dps-towjob](https://github.com/DaemonAlex/dps-towjob) | Queue-based tow job with jg-mechanic integration. |
+| [dps-services](https://github.com/DaemonAlex/dps-services) | Request a tow and follow it live on the lb-phone and lb-tablet. Pairs with dps-towjob. |
+| [dps-autoshops](https://github.com/DaemonAlex/dps-autoshops) | Self-service repair shops when no mechanic is on duty. |
+| [dps-cityworker](https://github.com/DaemonAlex/dps-cityworker) | City infrastructure job and career. |
+| [dps-ainpcs](https://github.com/DaemonAlex/dps-ainpcs) | NPCs you can talk to, with trust, quests and intel. |
+| [dps-badpeds](https://github.com/DaemonAlex/dps-badpeds) | Police interaction with NPCs: stops, arrests, intel and jail records. |
+| [dps-gangwars](https://github.com/DaemonAlex/dps-gangwars) | Ambient gang NPCs, territory population and war reinforcements. |
+| [dps-rotations](https://github.com/DaemonAlex/dps-rotations) | Moves dealers, harvests and other spots on a fixed schedule. |
+| [dps-trains](https://github.com/DaemonAlex/dps-trains) | The train system. Pairs with dps-trains-stock, dps-traintools and dps-transitapp. |
+| [dps-transitapp](https://github.com/DaemonAlex/dps-transitapp) | Live train arrival boards on the lb-phone. |
+| [dps-faceplant](https://github.com/DaemonAlex/dps-faceplant) | City help, reports and staff tools on the lb-phone and lb-tablet. |
+| [dps-chat](https://github.com/DaemonAlex/dps-chat) | A command box for voice-only servers. No chat feed. |
+| [dps-filmmode](https://github.com/DaemonAlex/dps-filmmode) | One key hides every HUD layer and gives a smooth free camera for recording. |
 
 ## Updating
 
