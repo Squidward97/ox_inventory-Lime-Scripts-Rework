@@ -1376,6 +1376,101 @@ $slotEdges: inset 0 1px 0 var(--edge-top), inset 0 0 0 1px var(--edge);
 .player-utility-figure {
   position: relative;
   flex: 1;
+  min-height: 0;
+}
+
+// DPS Inventory: the body figure with the self status panel under it
+.player-utility-centre {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: r(8);
+  padding: 0 r(12);
+}
+
+.player-status {
+  display: flex;
+  flex-direction: column;
+  gap: r(8);
+}
+
+.player-status-vitals {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: r(6) r(10);
+}
+
+.player-status-vital {
+  --status: 228 228 231;
+  display: flex;
+  flex-direction: column;
+  gap: r(3);
+
+  &[data-level='1'] {
+    --status: 252 211 77;
+  }
+
+  &[data-level='2'] {
+    --status: 248 113 113;
+  }
+}
+
+.player-status-vital-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: r(11);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: $zinc400;
+
+  b {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: rgb(var(--status));
+  }
+}
+
+.player-status-bar {
+  height: r(4);
+  background: rgb(255 255 255 / 0.1);
+
+  i {
+    display: block;
+    height: 100%;
+    background: rgb(var(--status));
+    transition: width 300ms ease-out;
+  }
+}
+
+.player-status-lines {
+  display: flex;
+  flex-wrap: wrap;
+  gap: r(4);
+  max-height: r(46);
+  overflow-y: auto;
+}
+
+.player-status-line {
+  padding: r(2) r(7);
+  font-size: r(11);
+  line-height: 1.4;
+  white-space: nowrap;
+  color: $zinc400;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12);
+
+  &[data-severity='1'],
+  &[data-severity='2'] {
+    color: #fcd34d;
+    box-shadow: inset 0 0 0 1px rgb(252 211 77 / 0.45);
+  }
+
+  &[data-severity='3'],
+  &[data-severity='4'] {
+    color: #f87171;
+    box-shadow: inset 0 0 0 1px rgb(248 113 113 / 0.55);
+  }
 }
 
 // tactical: the body outline stands plain, without the soft glow below (it renders oddly in game)

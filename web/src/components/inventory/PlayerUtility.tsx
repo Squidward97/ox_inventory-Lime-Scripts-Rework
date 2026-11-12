@@ -7,6 +7,7 @@ import { InventoryType, UtilitySlotConfig } from '../../typings';
 import InventorySlot from './InventorySlot';
 import SectionHead, { SectionCount } from './SectionHead';
 import BodySvg from '../utils/BodySvg';
+import PlayerStatus from './PlayerStatus';
 import { BackpackIcon, ParachuteIcon, PhoneIcon, PistolIcon, VestIcon } from '../utils/icons/UtilityIcons';
 import { IdIcon, WalletIcon } from '../utils/icons/TablerIcons';
 
@@ -113,8 +114,11 @@ export const PlayerEquipment: React.FC = () => {
             <UtilityCell config={config} key={`utility-${config.slot}`} />
           ))}
         </div>
-        <div className="player-utility-figure">
-          <BodySvg />
+        <div className="player-utility-centre">
+          <div className="player-utility-figure">
+            <BodySvg />
+          </div>
+          <PlayerStatus />
         </div>
         <div className="player-utility-column">
           {gearSlots.slice(half).map((config) => (

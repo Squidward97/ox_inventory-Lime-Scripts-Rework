@@ -5,7 +5,8 @@ The inventory used on the DelPerroSands FiveM server.
 It is [ox_inventory](https://github.com/overextended/ox_inventory) by Overextended, with the
 [Lime Scripts rework](https://github.com/Squidward97/ox_inventory-Lime-Scripts-Rework) on top
 (equipment slots, backpacks, armour plates, 3D item inspection, a shop cart and a redesigned
-screen), plus a sixth theme in the DelPerroSands colours.
+screen), plus a sixth theme in the DelPerroSands colours and a self status panel that shows
+your own health on the inventory screen.
 
 **Based on:** ox_inventory 2.48.1 and the Lime Scripts rework as of 30 October 2026.
 
@@ -22,7 +23,7 @@ This project exists because of other people's work. All of it is theirs unless l
 |---|---|---|
 | [ox_inventory](https://github.com/overextended/ox_inventory): the inventory itself, its item, weapon, shop, stash and vehicle systems, its security model and its web screen | [Linden](https://github.com/thelindat), [Luke](https://github.com/LukeWasTakenn), [Dunak](https://github.com/dunak-debug) and the Overextended contributors | GPL-3.0-or-later |
 | [Ox Inventory Rework](https://github.com/Squidward97/ox_inventory-Lime-Scripts-Rework): equipment and utility slots, backpacks, armour plates, 3D inspection, the shop cart with card payments, the redesigned screen and its five themes | Lime Scripts ([Squidward97](https://github.com/Squidward97)) and contributors | GPL-3.0-or-later |
-| DelPerroSands theme, the merge up to ox_inventory 2.48.1, and this documentation | [DelPerroSands](https://github.com/DaemonAlex) | GPL-3.0-or-later |
+| DelPerroSands theme, the self status panel, the carry-over for old bags, the item tools, the merge up to ox_inventory 2.48.1, and this documentation | [DelPerroSands](https://github.com/DaemonAlex) | GPL-3.0-or-later |
 
 If this is useful to you, the people to thank are the ox_inventory authors
 ([sponsor Linden](https://ko-fi.com/thelindat)) and Lime Scripts.
@@ -52,6 +53,13 @@ From DelPerroSands:
 
 - **The `delperro` theme**: navy panels, one orange outline, cream text, square corners, no glow.
   It is the default theme here.
+- **A self status panel**: under the body figure, meters for health, armour, food, water and
+  stress, and a short list of what is wrong with you. Injured limbs light up on the figure and
+  name the injury when you point at them. See "The status panel" below.
+- **Old bags keep their contents**: when you turn a stock container item into a worn backpack,
+  bags players already own carry their contents over the first time they are seen.
+- **Two tools** in `tools/`: one sorts an item list into categories and rarities, one shrinks
+  oversized item pictures.
 - ox_inventory 2.48.0 and 2.48.1 applied on top of the rework, which was built on 2.47.9. That
   brings in the upstream fixes of those releases, including the checks that reject a
   client-supplied vehicle inventory id.
@@ -66,9 +74,16 @@ Kept short on purpose, so updates stay easy. Every change is one of these:
 | `web/src/main.tsx` | Imports the theme. |
 | `web/src/utils/uistyle.ts` | Adds `delperro` to the theme list. |
 | `web/src/components/inventory/InventoryChrome.tsx` | Adds the theme to the settings menu. |
-| `client.lua` | Adds `delperro` to the themes a player may save. |
+| `client.lua` | Adds `delperro` to the themes a player may save. Starts and stops the status panel with the inventory. |
+| `modules/status/client.lua` | New. Gathers the player's condition and sends it to the screen. |
+| `web/src/components/inventory/PlayerStatus.tsx` | New. The status panel. |
+| `web/src/components/inventory/PlayerUtility.tsx` | Puts the status panel under the body figure. |
+| `web/src/components/utils/BodySvg.tsx` | The figure reads the status message and names injuries in its tooltip. |
+| `web/src/index.scss`, `web/src/styles/outline.scss` | Styles for the status panel. |
+| `modules/items/server.lua` | A bag that was a stock container keeps its contents when it becomes a backpack. |
+| `tools/categorise.py`, `tools/shrink_images.py` | New. Item list and picture tools. |
 | `init.lua` | The default theme is `delperro`. |
-| `locales/en.json` | Two strings for the theme's name and hint. |
+| `locales/en.json` | Strings for the theme and the status panel. |
 | `fxmanifest.lua` | Version, repository link and description. |
 | 12 files from ox_inventory 2.48.0 and 2.48.1 | Applied unchanged. See [UPDATING.md](./UPDATING.md). |
 | `README.md`, `NOTICE.md`, `UPDATING.md` | Documentation. |
@@ -130,7 +145,76 @@ setr inventory:armourplates { "item": "armour_plate", "armourPerPlate": 50, "max
 # Shop cart: allow paying by bank card, and an optional item needed to do so.
 setr inventory:cardpayment true
 setr inventory:carditem ""
+
+# Self status panel under the body figure. 0 turns it off. Refresh is in milliseconds.
+setr inventory:statuspanel 1
+setr inventory:statusrefresh 1000
 ```
+
+## The status panel
+
+Open the inventory and the equipment panel shows your own condition under the body figure.
+
+| Shown | Where it comes from |
+|---|---|
+| Health, armour, air (under water) | The game itself. Works on any framework. |
+| Food, water, stress | The player statebags `hunger`, `thirst` and `stress`, as qbx_core sets them. A meter is left out if its value does not exist. |
+| Injuries per limb, bleeding, dazed, critically hurt, unconscious | wasabi_ambulance, through its client events and the `wasabi:deathState` statebag. Left out if it is not running. |
+| Anything else | Other resources, through the export below. |
+
+A meter turns amber under half and red under a quarter. Stress is read the other way round.
+The panel only updates while the inventory is open.
+
+**Adding your own lines.** The inventory fires the client event `ox_inventory:statusOpened` each
+time it opens. Answer it with the client export `setStatusLines`:
+
+```lua
+AddEventHandler('ox_inventory:statusOpened', function()
+    exports.ox_inventory:setStatusLines({
+        { label = 'Fever', severity = 2 },          -- 0 note, 1-2 amber, 3-4 red
+        { label = 'Diagnosed: Flu', severity = 3 },
+    })
+end)
+```
+
+Each call replaces that resource's earlier lines. Pass an empty table to clear them. Lines are
+cleared when the resource stops. Send only what the player's character would know.
+
+## Categories and rarity
+
+The filter buttons and the rarity colours read two optional fields on an item in `data/items.lua`:
+
+```lua
+['lockpick'] = {
+    label = 'Lockpick',
+    category = 'tools',     -- food, weapons, clothing or tools
+    rarity = 'uncommon',    -- common, uncommon, rare, epic or legendary
+},
+```
+
+Weapons, ammo and attachments are filed under weapons without a `category`. To sort a large list
+in one go, run `python3 tools/categorise.py data/items.lua`. It works from item names and from
+food and drink effects, only fills in items that have neither field, and prints what it did.
+Check the result: it is a first pass, not a judgement. Keep a copy of the file first.
+
+## Item pictures
+
+The screen never draws an item picture larger than 256 px. `python3 tools/shrink_images.py
+web/images` resizes anything bigger and leaves the rest alone. It needs Pillow. On DelPerroSands
+it took the folder from 169 MB to 89 MB, which every player downloads.
+
+## Moving existing bags to backpacks
+
+If your server already has bag items that are stock ox_inventory containers, you can make them
+worn backpacks without emptying them:
+
+1. Give the item a `backpack = { slots = ..., maxWeight = ... }` table in `data/items.lua`.
+2. Remove its entry from `modules/items/containers.lua`.
+3. Add its name to the backpack slot's `items` list in `inventory:utilityslots`.
+
+The first time the server sees an old bag, its old container id becomes the bag's serial and its
+saved contents are renamed to match. A container whitelist does not carry over: backpacks have
+none. Keep an item as a container if it needs one.
 
 ## The DelPerroSands theme
 

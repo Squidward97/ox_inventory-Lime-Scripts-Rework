@@ -35,6 +35,9 @@ This copy is a further modified version, distributed at https://github.com/Daemo
 
 - A sixth web UI theme, `delperro` (`web/src/styles/delperro.scss`), registered in `web/src/main.tsx`, `web/src/utils/uistyle.ts`, `web/src/components/inventory/InventoryChrome.tsx`, `client.lua` and `locales/en.json`, and made the default in `init.lua`. Modified by DelPerroSands, November 2026.
 - The changes of ox_inventory 2.48.0 and 2.48.1 applied on top of the rework's 2.47.9 base (12 files, unchanged from upstream). Copyright of those changes remains with the ox_inventory authors.
+- A self status panel: `modules/status/client.lua` and `web/src/components/inventory/PlayerStatus.tsx` (new), with changes to `client.lua`, `web/src/components/inventory/PlayerUtility.tsx`, `web/src/components/utils/BodySvg.tsx`, `web/src/index.scss` and `web/src/styles/outline.scss`. Modified by DelPerroSands, November 2026.
+- `modules/items/server.lua`: a bag that was a stock container keeps its contents when its item becomes a backpack. Modified by DelPerroSands, November 2026.
+- `tools/categorise.py` and `tools/shrink_images.py` (new).
 - `fxmanifest.lua`: version, repository link and description.
 - Documentation: `README.md` rewritten, `UPDATING.md` added, this section added.
 

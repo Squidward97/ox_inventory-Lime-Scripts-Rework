@@ -148,7 +148,19 @@ end
 
 local function setBackpackMetadata(item, metadata)
 	if not metadata.id then
-		metadata.id = ('BPK%s%s'):format(GenerateText(2), math.random(100000, 999999))
+		if metadata.container then
+			-- DPS Inventory: this bag was a stock ox_inventory container before the item was given a
+			-- `backpack` table. Keep what is inside it: the old container id becomes the bag's serial
+			-- and its saved row is renamed to the backpack stash that serial points at.
+			local old = metadata.container
+			metadata.id = old
+			metadata.container = nil
+			metadata.size = nil
+
+			MySQL.update('UPDATE ox_inventory SET name = ? WHERE owner = ? AND name = ?', { ('backpack-%s'):format(old), '', old })
+		else
+			metadata.id = ('BPK%s%s'):format(GenerateText(2), math.random(100000, 999999))
+		end
 	end
 
 	if metadata.label == ('%s %s'):format(item.label, metadata.id) then

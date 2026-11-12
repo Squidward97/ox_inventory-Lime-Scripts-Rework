@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { getLatestStatus } from '../inventory/PlayerStatus';
 
 const BODY_PART_NAMES: Record<string, string> = {
   HEAD: 'Head',
@@ -56,6 +57,8 @@ const BODY_PART_SEGMENTS: Record<string, Array<{ start: number; end: number }>> 
 interface Injury {
   severity: number;
   weaponHash?: number;
+  // DPS Inventory: what the injury is, shown in the tooltip instead of the generic severity wording
+  label?: string;
 }
 
 const getInjuryLabel = (severity: number) => {
@@ -74,8 +77,8 @@ const getInjuryLabel = (severity: number) => {
 };
 
 const BodySvg: React.FC = () => {
-  const [injuries, setInjuries] = useState<Record<string, Injury | null>>({});
-  const [healthPercent, setHealthPercent] = useState(100);
+  const [injuries, setInjuries] = useState<Record<string, Injury | null>>(() => getLatestStatus()?.injuries || {});
+  const [healthPercent, setHealthPercent] = useState(() => getLatestStatus()?.healthPercent ?? 100);
   const [hoveredPart, setHoveredPart] = useState<string | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
 
@@ -89,6 +92,12 @@ const BodySvg: React.FC = () => {
 
       if (event.data?.action === 'updateHealthStatus') {
         setHealthPercent(event.data.healthPercent ?? 100);
+      }
+
+      // DPS Inventory: the status panel's message carries both (modules/status/client.lua)
+      if (event.data?.action === 'updateStatus') {
+        setInjuries(event.data.data?.injuries || {});
+        setHealthPercent(event.data.data?.healthPercent ?? 100);
       }
     };
 
@@ -208,7 +217,7 @@ const BodySvg: React.FC = () => {
         <div className="body-svg-tooltip cut-xs" style={{ left: `${tooltipPos.x}px`, top: `${tooltipPos.y - 44}px` }}>
           <p className="body-svg-tooltip-part">{BODY_PART_NAMES[hoveredPart] || hoveredPart}</p>
           <p style={{ color: INJURY_OUTLINE_COLORS[injuries[hoveredPart]?.severity || 0] }}>
-            {getInjuryLabel(injuries[hoveredPart]?.severity || 0)}
+            {injuries[hoveredPart]?.label || getInjuryLabel(injuries[hoveredPart]?.severity || 0)}
           </p>
         </div>
       )}

@@ -123,6 +123,7 @@ local CraftingBenches = require 'modules.crafting.client'
 local Vehicles = lib.load('data.vehicles')
 local Inventory = require 'modules.inventory.client'
 local Utility = require 'modules.utility.client'
+local Status = require 'modules.status.client'
 
 local function getBackpackPanel()
     return lib.callback.await('ox_inventory:openBackpack', false) or false
@@ -291,6 +292,8 @@ function client.openInventory(inv, data)
     currentInventory = right or defaultInventory
     left.items = PlayerData.inventory
     left.groups = PlayerData.groups
+
+    Status.open()
 
     SendNUIMessage({
         action = 'setupInventory',
@@ -927,6 +930,7 @@ function client.closeInventory()
 
 	if invOpen then
 		invOpen = nil
+		Status.close()
 		-- the blur is cleared just below anyway
 		WeaponInspect.close(true)
 		SetNuiFocus(false, false)

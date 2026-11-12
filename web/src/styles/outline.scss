@@ -265,9 +265,17 @@ $widthNarrow: calc(#{$cols - 1} * var(--slot-w) + #{$cols - 2} * #{$gutter});
     display: contents;
   }
 
-  .player-utility-figure {
+  // DPS Inventory: the figure now sits in a wrapper with the status panel; the wrapper takes the
+  // grid cell and the panel stands at its foot (the figure itself is fixed to the screen edge)
+  .player-utility-centre {
     grid-column: 5;
     grid-row: 1 / -1;
+    padding: 0;
+    justify-content: flex-end;
+  }
+
+  .player-status-vitals {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   // The body figure stands huge against the right edge of the screen, half of it past the edge,

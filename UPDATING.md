@@ -91,12 +91,16 @@ git checkout -b update-lime
 git merge lime/main
 ```
 
-Conflicts are most likely in the eight files listed under "What DelPerroSands changed" in
+Conflicts are most likely in the files listed under "What DelPerroSands changed" in
 [README.md](./README.md), because those are the only ones this project edits:
 
 - `web/src/utils/uistyle.ts`, `web/src/main.tsx`, `InventoryChrome.tsx`, `client.lua`: each has
   a list of themes. Keep the rework's new list and add `delperro` back to it.
 - `init.lua`: keep `delperro` as the default theme.
+- `client.lua`: also keep the `Status` require and the `Status.open()` and `Status.close()` calls.
+- `PlayerUtility.tsx`: keep the `player-utility-centre` wrapper and `<PlayerStatus />` under the figure.
+- `BodySvg.tsx`: keep the `updateStatus` branch and the `label` in the tooltip.
+- `modules/items/server.lua`: keep the `metadata.container` branch in `setBackpackMetadata`.
 - `locales/en.json`: keep both sets of strings.
 - `fxmanifest.lua`, `README.md`, `NOTICE.md`: keep this project's versions. Read the rework's new
   README for anything worth copying across.
@@ -127,6 +131,7 @@ server, with a copy of the old folder ready to put back:
 6. A backpack: wear it, fill it, take it off, drop it, pick it up. Contents are still there.
 7. A vest with plates: insert, take damage, relog. The plates are still there.
 8. Keys 1 to 5 use the quick slots.
+   The status panel shows your meters, and an injury lights up the right limb.
 9. Every script that hooks the inventory still does its job. Search your resources for
    `registerHook` to list them.
 10. The server console shows no errors from `ox_inventory` at start, and none while doing the above.
